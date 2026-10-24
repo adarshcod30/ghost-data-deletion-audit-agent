@@ -1,0 +1,9 @@
+log.txt
+.env
+.claude/
+__pycache__/
+.venv/
+.cache/
+code.zip
+runs/
+.pytest_cache/
