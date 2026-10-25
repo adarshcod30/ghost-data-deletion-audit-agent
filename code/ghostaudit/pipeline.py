@@ -46,4 +46,6 @@ class Pipeline:
         extra = tuple(x for x in (self.workflow.account.get(request.case_id),) if x)
         ledger = build_ledger(request, subject, self.index, self.policy, extra)
         status, steps = plan_steps(ledger)
+        if not steps:
+            why = "no resource could be identified from admissible evidence; COMPLETE because no identifiable residue exists in it"
         return Answer(request.case_id, status, steps, ledger, why)

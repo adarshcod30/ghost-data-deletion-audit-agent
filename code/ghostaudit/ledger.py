@@ -68,6 +68,27 @@ def choose_observation(observations: list[Observation], request: DeletionRequest
     return None
 
 
+def find_citation(resource_id: str, state: str, system: str, request: DeletionRequest, index: EvidenceIndex,
+                  observations: list[Observation]) -> str:
+    """The best file that may be cited for a resource in a given state at audit_at.
+
+    In order: an observation that shows this state in a file captured by then; any record captured by
+    then that names the resource (an unreadable mention still shows the resource was in that file);
+    for an absent record, a snapshot that covers the system and does not contain it. Empty when none.
+    """
+    same = [o for o in observations if o.state == state and o.file_captured_at <= request.audit_at
+            and o.time <= request.audit_at]
+    if same:
+        return max(same, key=lambda o: (o.time, case_sort_key(o.file_id))).file_id
+    if state != "ABSENT":
+        named = [r for r in index.for_resource(resource_id) if r.captured_at <= request.audit_at
+                 and r.kind not in ("log_trace",)]
+        if named:
+            return max(named, key=lambda r: (r.record_time or r.captured_at, case_sort_key(r.file_id))).file_id
+        return ""
+    return absence_proof(system, resource_id, request, index)
+
+
 def absence_proof(system: str, resource_id: str, request: DeletionRequest, index: EvidenceIndex) -> str:
     """A file that covers `system` at or before audit_at and does not contain the resource."""
     mentioned = {r.file_id for r in index.for_resource(resource_id)}
@@ -75,6 +96,8 @@ def absence_proof(system: str, resource_id: str, request: DeletionRequest, index
     for scope in index.scopes:
         if scope.system != system or scope.file_id in mentioned or scope.snapshot_at > request.audit_at:
             continue
+        if index.file_times.get(scope.file_id, request.audit_at) > request.audit_at:
+            continue  # only a file captured by audit_at may be cited, whatever its internal snapshot time
         if best is None or (scope.snapshot_at, case_sort_key(scope.file_id)) > (best.snapshot_at, case_sort_key(best.file_id)):
             best = scope
     return best.file_id if best else ""
@@ -113,7 +136,8 @@ def build_ledger(request: DeletionRequest, subject: Subject, index: EvidenceInde
         system = index.system_of(resource_id)
         if system is None:
             continue
-        obs = choose_observation(observations_for(resource_id, index, request.audit_at), request)
+        found = observations_for(resource_id, index, request.audit_at)
+        obs = choose_observation(found, request)
         if obs is None:
             if prefix == "account":
                 # Linked by another record (a search document names its source account) but no live
@@ -126,5 +150,7 @@ def build_ledger(request: DeletionRequest, subject: Subject, index: EvidenceInde
         if action is None:
             continue
         cited = obs.file_id if obs.file_captured_at <= request.audit_at else ""
+        if not cited:
+            cited = find_citation(resource_id, obs.state, system, request, index, found)
         entries.append(LedgerEntry(resource_id, system, prefix, action, obs.state, cited, obs))
     return CaseLedger(request.case_id, subject, tuple(entries))

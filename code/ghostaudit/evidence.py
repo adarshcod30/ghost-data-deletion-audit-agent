@@ -92,14 +92,27 @@ class Scope:
     row_count: int
 
 
-def _collect_ids(text: str, resource_re: re.Pattern) -> tuple[tuple[str, ...], tuple[str, ...], tuple[str, ...], tuple[str, ...], tuple[str, ...]]:
+class ResourcePatterns:
+    """The exact resource id pattern for machine text and the tolerant one for OCR text."""
+
+    def __init__(self, prefixes: Iterable[str]) -> None:
+        prefixes = list(prefixes)
+        self.exact = compile_resource_re(prefixes)
+        self.ocr = compile_ocr_resource_re(prefixes)
+
+    def fullmatch(self, text: str):
+        return self.exact.fullmatch(text)
+
+
+def _collect_ids(text: str, resource_re, ocr: bool = False) -> tuple[tuple[str, ...], tuple[str, ...], tuple[str, ...], tuple[str, ...], tuple[str, ...]]:
     emails = sorted({normalize_email(m) for m in EMAIL_RE.findall(text)})
     hashes = sorted({m.casefold() for m in HASH_RE.findall(text)})
     phones = sorted({p for p in (normalize_phone(m) for m in PHONE_RE.findall(text)) if 8 <= len(p) <= 16})
     users = sorted({m.casefold() for m in USER_RE.findall(text)})
     mentions: list[str] = []
-    for m in resource_re.finditer(text):
-        rid = m.group(0)
+    pattern = resource_re.ocr if ocr and hasattr(resource_re, "ocr") else getattr(resource_re, "exact", resource_re)
+    for m in pattern.finditer(text):
+        rid = normalize_ocr_resource(m.group(0)) if ocr else m.group(0)
         if rid not in mentions:
             mentions.append(rid)
     return tuple(emails), tuple(hashes), tuple(phones), tuple(users), tuple(mentions)
@@ -126,6 +139,19 @@ def prefixes_from_activity(activity: Iterable[Activity]) -> list[str]:
 def compile_resource_re(prefixes: Iterable[str]) -> re.Pattern:
     alternation = "|".join(re.escape(p) for p in sorted(set(prefixes), key=lambda p: (-len(p), p)))
     return re.compile(rf"(?<![A-Za-z0-9_])(?:{alternation})_\d+(?![A-Za-z0-9_])")
+
+
+def compile_ocr_resource_re(prefixes: Iterable[str]) -> re.Pattern:
+    """Like compile_resource_re but for OCR text, where an underscore is often read as a space or a
+    dash ("export 1260"). At least three digits are required so ordinary prose does not match."""
+    parts = []
+    for p in sorted(set(prefixes), key=lambda p: (-len(p), p)):
+        parts.append(re.escape(p).replace("_", "[ _]"))
+    return re.compile(rf"(?<![A-Za-z0-9_])(?:{'|'.join(parts)})[ _\-]+\d{{3,}}(?![A-Za-z0-9_])", re.I)
+
+
+def normalize_ocr_resource(raw: str) -> str:
+    return re.sub(r"[ \-]+", "_", raw.strip().lower()).replace("__", "_")
 
 
 def resource_prefix(resource_id: str) -> str:
@@ -247,6 +273,7 @@ class EvidenceIndex:
     prefix_conflicts: dict[str, set[str]]
     errors: dict[str, str]
     scopes: list = field(default_factory=list)
+    file_times: dict = field(default_factory=dict)   # file_id -> manifest capture time (the citable time)
     _by_resource: dict[str, list[int]] = field(default_factory=dict, repr=False)
     _by_identifier: dict[str, list[int]] = field(default_factory=dict, repr=False)
 
@@ -278,7 +305,7 @@ class EvidenceIndex:
 def _mk(file: EvidenceFile, kind: str, locator: str, text: str, fields: dict, resource_re: re.Pattern,
         systems: set[str], context_system: str | None = None, ocr: bool = False,
         forced_time: datetime | None = None) -> EvidenceRecord:
-    emails, hashes, phones, users, mentions = _collect_ids(text, resource_re)
+    emails, hashes, phones, users, mentions = _collect_ids(text, resource_re, ocr)
     primary = fields.get("resource_id") if isinstance(fields.get("resource_id"), str) else None
     if primary and primary not in mentions and resource_re.fullmatch(primary):
         mentions = (primary, *mentions)
@@ -453,7 +480,7 @@ def _index_file(file: EvidenceFile, resource_re, systems, scopes: list) -> list[
 def build_index(dataset: Dataset, allow_empty: Iterable[str] = ()) -> EvidenceIndex:
     """Index every evidence file. Raises EvidenceIndexError rather than return a partial index."""
     systems = {a.source_system for a in dataset.activity} | {a.target_system for a in dataset.activity}
-    resource_re = compile_resource_re(prefixes_from_activity(dataset.activity))
+    resource_re = ResourcePatterns(prefixes_from_activity(dataset.activity))
     files = sorted(dataset.evidence_files, key=lambda f: case_sort_key(f.file_id))
     records: list[EvidenceRecord] = []
     scopes: list[Scope] = []
@@ -483,9 +510,55 @@ def build_index(dataset: Dataset, allow_empty: Iterable[str] = ()) -> EvidenceIn
     conflicts = {p: s for p, s in stated.items() if len(s) > 1}
     prefix_system = {p: next(iter(s)) for p, s in stated.items() if len(s) == 1}
     scopes = _resolve_table_systems(scopes, records, prefix_system)
-    index = EvidenceIndex(records, counts, prefix_system, conflicts, errors, scopes)
+    known = {normalize_email(i.email) for i in dataset.identities}
+    known |= {normalize_email(a.old_value) for a in dataset.audit_log if a.field_name == "email"}
+    known |= {normalize_email(a.new_value) for a in dataset.audit_log if a.field_name == "email"}
+    records = _repair_ocr_emails(records, known)
+    index = EvidenceIndex(records, counts, prefix_system, conflicts, errors, scopes,
+                          {f.file_id: f.captured_at for f in files})
     index._link()
     return index
+
+
+def edit_distance(a: str, b: str, cap: int = 3) -> int:
+    """Levenshtein distance, giving up above `cap`."""
+    if abs(len(a) - len(b)) > cap:
+        return cap + 1
+    previous = list(range(len(b) + 1))
+    for i, ca in enumerate(a, start=1):
+        current = [i]
+        for j, cb in enumerate(b, start=1):
+            current.append(min(previous[j] + 1, current[j - 1] + 1, previous[j - 1] + (ca != cb)))
+        if min(current) > cap:
+            return cap + 1
+        previous = current
+    return previous[-1]
+
+
+def _repair_ocr_emails(records: list[EvidenceRecord], known: set[str]) -> list[EvidenceRecord]:
+    """OCR garbles characters ("outiook" for "outlook"). An email found in OCR text that nobody owns
+    is mapped to the one real email within edit distance 2, and only if that choice is unique. An email
+    that IS someone's real address is never rewritten, so a genuine near-duplicate (joana.berg versus
+    jonas.berg) can never be merged."""
+    from dataclasses import replace
+    cache: dict[str, str | None] = {}
+
+    def resolve(email: str) -> str | None:
+        if email in known:
+            return None
+        if email not in cache:
+            near = [k for k in known if edit_distance(email, k, 2) <= 2]
+            cache[email] = near[0] if len(near) == 1 else None
+        return cache[email]
+
+    out: list[EvidenceRecord] = []
+    for rec in records:
+        if rec.ocr and rec.emails:
+            extra = {fixed for e in rec.emails if (fixed := resolve(e))}
+            if extra:
+                rec = replace(rec, emails=tuple(sorted(set(rec.emails) | extra)))
+        out.append(rec)
+    return out
 
 
 def _resolve_table_systems(scopes: list[Scope], records: list[EvidenceRecord], prefix_system: dict[str, str]) -> list[Scope]:

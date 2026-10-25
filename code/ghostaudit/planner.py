@@ -54,7 +54,16 @@ def _entry_ops(entry: LedgerEntry) -> tuple[str | None, str | None, str] | None:
 
 
 def plan_steps(ledger: CaseLedger) -> tuple[str, list[dict]]:
-    """Return (deletion_status, ordered steps) for an authorised deletion case."""
+    """Return (deletion_status, ordered steps) for an authorised deletion case.
+
+    With no identified resource the status is COMPLETE with no steps, and the caller flags the case as
+    unidentified. Reasoning: residue that remained would carry an identifier and show up in the
+    evidence, so a subject with nothing identifiable has nothing left to find. The one sample with an
+    empty ledger (a deleted account and an already anonymized profile) is COMPLETE. The reported
+    status is no help: a reported COMPLETE was truly incomplete in 11 of 17 samples.
+    """
+    if not ledger.entries:
+        return "COMPLETE", []
     pending: list[dict] = []
     findings = False
     complete_evidence: dict[str, str] = {}

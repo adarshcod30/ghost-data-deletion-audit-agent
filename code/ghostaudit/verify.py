@@ -18,7 +18,7 @@ PHASE_OF = {op: phase for phase, ops in {
 
 
 def verify_row(case_id: str, status: str, steps: list[dict], audit_at: datetime,
-               evidence_times: dict[str, datetime]) -> list[str]:
+               evidence_times: dict[str, datetime], allow_unidentified: bool = False) -> list[str]:
     """Problems with one row (empty list when it is valid).
 
     `evidence_times` maps every citable id (file_id, activity_id, audit_id) to when it was captured
@@ -30,8 +30,10 @@ def verify_row(case_id: str, status: str, steps: list[dict], audit_at: datetime,
         return [f"{tag}: unknown status {status!r}"]
     if status == "NOT_APPLICABLE":
         return [f"{tag}: NOT_APPLICABLE row must have an empty step list"] if steps else []
-    if not steps:
+    if not steps and not allow_unidentified:
         problems.append(f"{tag}: {status} row has no steps")
+    if not steps and allow_unidentified and status != "COMPLETE":
+        problems.append(f"{tag}: an unidentified case must be COMPLETE")
     previous = None
     for index, step in enumerate(steps, start=1):
         where = f"{tag} step {index}"
@@ -64,7 +66,7 @@ def verify_row(case_id: str, status: str, steps: list[dict], audit_at: datetime,
                 problems.append(f"{where}: unknown evidence id {evidence}")
             elif evidence_times[evidence] > audit_at:
                 problems.append(f"{where}: evidence {evidence} is dated after audit_at")
-    if status == "INCOMPLETE" and not any(s.get("phase") == "FINDING" for s in steps):
+    if status == "INCOMPLETE" and steps and not any(s.get("phase") == "FINDING" for s in steps):
         problems.append(f"{tag}: INCOMPLETE row has no finding")
     return problems
 

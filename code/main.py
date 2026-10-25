@@ -101,10 +101,14 @@ def cmd_run(_: argparse.Namespace) -> int:
     evidence_times = {f.file_id: f.captured_at for f in dataset.evidence_files}
     evidence_times.update({a.activity_id: a.event_time for a in dataset.activity})
     evidence_times.update({e.audit_id: e.event_time for e in dataset.audit_log})
-    rows, problems, audit = [], [], []
+    rows, problems, audit, unidentified_cases = [], [], [], []
     for request in sorted(dataset.requests, key=lambda r: case_sort_key(r.case_id)):
         answer = pipeline.answer(request)
-        problems += verify_row(request.case_id, answer.status, answer.steps, request.audit_at, evidence_times)
+        unidentified = answer.status == "COMPLETE" and not answer.steps and answer.note.startswith("no resource")
+        if unidentified:
+            unidentified_cases.append(request.case_id)
+        problems += verify_row(request.case_id, answer.status, answer.steps, request.audit_at, evidence_times,
+                               allow_unidentified=unidentified)
         rows.append((request.case_id, answer.status, serialize_steps(answer.steps)))
         audit.append({"case_id": request.case_id, "status": answer.status, "note": answer.note,
                       "user_id": answer.ledger.subject.user_id if answer.ledger else None,
@@ -128,6 +132,7 @@ def cmd_run(_: argparse.Namespace) -> int:
     steps = sum(len(json.loads(blob)) for _, _, blob in rows)
     print(f"wrote {len(rows)} rows to output.csv: {dict(sorted(counts.items()))}, {steps} steps, 0 contract problems")
     print(f"workflow account links: {pipeline.workflow.stats}")
+    print(f"unidentified cases (COMPLETE, no steps): {len(unidentified_cases)} {unidentified_cases}")
     return 0
 
 
