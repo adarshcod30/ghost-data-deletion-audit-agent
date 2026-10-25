@@ -47,8 +47,8 @@ def email_hash(email: str) -> str:
 def case_sort_key(case_id: str) -> tuple[str, int]:
     """Natural order for ids like case_33 < case_100.
 
-    A plain string sort would put case_100 before case_33. The input file and
-    sample_output.csv are both in natural order, so this is the order we emit.
+    A plain string sort would put case_100 before case_33. The input file and the public sample
+    answers are both in natural order, so this is the order we emit.
     """
     match = re.fullmatch(r"(.*?)(\d+)", case_id)
     if not match:
