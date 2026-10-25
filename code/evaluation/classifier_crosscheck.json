@@ -1,0 +1,23 @@
+{
+ "cases": 550,
+ "disputed": [],
+ "models": {
+  "primary": "qwen.qwen3-vl-235b-a22b",
+  "second": "moonshotai.kimi-k2.5"
+ },
+ "pairwise_agreement": {
+  "baseline vs primary": [
+   398,
+   398
+  ],
+  "baseline vs second": [
+   398,
+   398
+  ],
+  "primary vs second": [
+   398,
+   398
+  ]
+ },
+ "texts": 398
+}
