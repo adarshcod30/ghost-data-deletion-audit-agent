@@ -16,8 +16,8 @@ agree. There is no gold label for the hidden requests, so agreement is evidence 
 
 Texts with any disagreement or unusable answer: **0**.
 
-* `moonshotai.kimi-k2.5`: 398 calls this run (0 live, 398 cached), 248226 input and 14149 output tokens, about $0.191383 for the live and cached tokens counted together.
-* `qwen.qwen3-vl-235b-a22b`: 398 calls this run (0 live, 398 cached), 247206 input and 14047 output tokens, about $0.082956 for the live and cached tokens counted together.
+* `moonshotai.kimi-k2.5`: 398 calls, 248226 input and 14162 output tokens, about $0.191422 at list price.
+* `qwen.qwen3-vl-235b-a22b`: 398 calls, 247206 input and 14049 output tokens, about $0.082959 at list price.
 
 ## Disputed texts
 

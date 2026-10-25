@@ -22,7 +22,7 @@ NEGATED_DELETION = re.compile(
 OTHER_REQUEST = re.compile(
     r"\b(copy of|download|portable format|export|send me (a copy|everything|my data)|what (data|information) (do you|you) (hold|have))\b"
     r"|\b(reset|resetting)\b.{0,20}\b(password|login)\b|\bcan'?t (access|log ?in|sign ?in)\b|\blocked out\b"
-    r"|\b(misspelled|typo|incorrect|out of date|outdated)\b|\b(replace|update|change|correct)\b.{0,40}\b(name|email address|e-?mail|phone|mobile|number|address|surname)\b"
+    r"|\b(misspelled|typo|incorrect|out of date|outdated)\b|\b(replace|update|change|correct|fix|amend|edit|modify)\b.{0,40}\b(name|email address|e-?mail|phone|mobile|number|address|surname)\b"
     r"|\b(marketing|promotional|newsletter|sms promotions?)\b.{0,40}\b(only|unsubscribe|stop|opt)\b|\bunsubscribe\b|\bopt[- ]?out\b|\bremove me from (the )?marketing\b"
     r"|\b(invoices?|receipts?)\b", re.I)
 DELETION_WORDS = re.compile(r"\b(delet\w*|erase\w*|erasure|remov\w*|clos\w*|wipe\w*|forget)\b", re.I)
@@ -37,7 +37,7 @@ def baseline_authorizes_deletion(text: str) -> tuple[bool, str]:
         # An explicit deletion of the whole account alongside e.g. "invoices" still counts as deletion.
         if DELETION_WORDS.search(text) and re.search(r"\b(account|profile|personal data)\b", text, re.I) \
                 and not re.search(r"\b(only|just)\b", text, re.I) and not NEGATED_DELETION.search(text) \
-                and not re.search(r"\b(update|change|correct|replace|fix)\b", text, re.I):
+                and not re.search(r"\b(update|change|correct|replace|fix|amend|edit|modify)\b", text, re.I):
             return True, "deletion request that also mentions " + other.group(0)
         return False, f"different request ({other.group(0).strip()})"
     return True, "no sign of a different request"
