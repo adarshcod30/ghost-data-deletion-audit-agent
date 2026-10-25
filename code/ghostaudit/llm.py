@@ -113,7 +113,11 @@ class BedrockClient:
         parts: list = [model_id, system, user, max_tokens, temperature]
         if messages is not None or tool_config is not None:
             parts += [messages, tool_config]
-        return hashlib.sha256(json.dumps(parts, ensure_ascii=False, sort_keys=True).encode("utf-8")).hexdigest()
+        def _bytes_as_digest(value):  # image bytes enter the key as their hash
+            if isinstance(value, bytes):
+                return "sha256:" + hashlib.sha256(value).hexdigest()
+            raise TypeError(f"not serialisable: {type(value)}")
+        return hashlib.sha256(json.dumps(parts, ensure_ascii=False, sort_keys=True, default=_bytes_as_digest).encode("utf-8")).hexdigest()
 
     def converse(self, model_id: str, user: str = "", system: str = "", max_tokens: int = 400,
                  temperature: float = 0.0, purpose: str = "", messages: list | None = None,

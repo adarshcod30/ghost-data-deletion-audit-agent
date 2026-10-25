@@ -1,0 +1,792 @@
+{
+ "files": [
+  {
+   "attempts": 1,
+   "document_type": "console_screenshot",
+   "emails_missed": [],
+   "emails_ungrounded": [],
+   "file_id": "evidence_04",
+   "ids_missed": [],
+   "ids_ungrounded": [],
+   "model": "qwen.qwen3-vl-235b-a22b",
+   "model_emails": [
+    "haruka.s1838@zoho.com"
+   ],
+   "model_ids": [
+    "ORD-20265518",
+    "ORD-20265762",
+    "account_5762",
+    "support_9538"
+   ],
+   "name": "account_admin_console_20260926.png",
+   "records": [
+    {
+     "resource_id": "account_5762",
+     "resource_kind": "account",
+     "role": "primary",
+     "state_text": "Silver"
+    },
+    {
+     "resource_id": "support_9538",
+     "resource_kind": "support",
+     "role": "listed",
+     "state_text": ""
+    },
+    {
+     "resource_id": "ORD-20265762",
+     "resource_kind": "order",
+     "role": "listed",
+     "state_text": "Delivered - 18 Sep"
+    },
+    {
+     "resource_id": "ORD-20265518",
+     "resource_kind": "order",
+     "role": "listed",
+     "state_text": "Returned - 03 Sep"
+    }
+   ],
+   "tool": "tesseract",
+   "tool_emails": [
+    "haruka.s1838@zoho.com"
+   ],
+   "tool_ids": [
+    "account_5762",
+    "support_9538"
+   ],
+   "valid": true
+  },
+  {
+   "attempts": 1,
+   "document_type": "console_screenshot",
+   "emails_missed": [
+    "g.siiva76@gmall.com",
+    "jr@gmail.com"
+   ],
+   "emails_ungrounded": [
+    "g.silva76.jr@gmail.com"
+   ],
+   "file_id": "evidence_09",
+   "ids_missed": [],
+   "ids_ungrounded": [],
+   "model": "qwen.qwen3-vl-235b-a22b",
+   "model_emails": [
+    "email:g.silva76@gmail.com",
+    "g.silva76.jr@gmail.com",
+    "g.silva76@gmail.com"
+   ],
+   "model_ids": [
+    "search_1874",
+    "search_428"
+   ],
+   "name": "search_index_inspector_20260901.png",
+   "records": [
+    {
+     "resource_id": "search_428",
+     "resource_kind": "search",
+     "role": "primary",
+     "state_text": ""
+    },
+    {
+     "resource_id": "search_1874",
+     "resource_kind": "search",
+     "role": "listed",
+     "state_text": ""
+    }
+   ],
+   "tool": "tesseract",
+   "tool_emails": [
+    "g.siiva76@gmall.com",
+    "g.silva76@gmail.com",
+    "jr@gmail.com"
+   ],
+   "tool_ids": [
+    "search_1874",
+    "search_428"
+   ],
+   "valid": true
+  },
+  {
+   "attempts": 1,
+   "document_type": "console_screenshot",
+   "emails_missed": [],
+   "emails_ungrounded": [],
+   "file_id": "evidence_14",
+   "ids_missed": [],
+   "ids_ungrounded": [],
+   "model": "qwen.qwen3-vl-235b-a22b",
+   "model_emails": [
+    "jain.aditi@gmail.com",
+    "lucia-torres@gmail.com"
+   ],
+   "model_ids": [
+    "data_flow_1121",
+    "data_flow_9846"
+   ],
+   "name": "connector_management_console_20260807.png",
+   "records": [
+    {
+     "resource_id": "data_flow_1121",
+     "resource_kind": "data_flow",
+     "role": "primary",
+     "state_text": "Healthy"
+    },
+    {
+     "resource_id": "data_flow_9846",
+     "resource_kind": "data_flow",
+     "role": "listed",
+     "state_text": ""
+    },
+    {
+     "resource_id": null,
+     "resource_kind": "other",
+     "role": "listed",
+     "state_text": ""
+    },
+    {
+     "resource_id": null,
+     "resource_kind": "other",
+     "role": "listed",
+     "state_text": ""
+    }
+   ],
+   "tool": "tesseract",
+   "tool_emails": [
+    "jain.aditi@gmail.com",
+    "lucia-torres@gmail.com"
+   ],
+   "tool_ids": [
+    "data_flow_1121",
+    "data_flow_9846"
+   ],
+   "valid": true
+  },
+  {
+   "attempts": 1,
+   "document_type": "statement",
+   "emails_missed": [],
+   "emails_ungrounded": [],
+   "file_id": "evidence_18",
+   "ids_missed": [],
+   "ids_ungrounded": [],
+   "model": "qwen.qwen3-vl-235b-a22b",
+   "model_emails": [
+    "ingrid.dahl@outlook.com"
+   ],
+   "model_ids": [
+    "ORD-20261260"
+   ],
+   "name": "account_history_report_20260718.pdf",
+   "records": [
+    {
+     "resource_id": "ORD-20261260",
+     "resource_kind": "order",
+     "role": "primary",
+     "state_text": ""
+    }
+   ],
+   "tool": "pdftotext",
+   "tool_emails": [
+    "ingrid.dahl@outlook.com"
+   ],
+   "tool_ids": [],
+   "valid": true
+  },
+  {
+   "attempts": 1,
+   "document_type": "console_screenshot",
+   "emails_missed": [],
+   "emails_ungrounded": [],
+   "file_id": "evidence_19",
+   "ids_missed": [],
+   "ids_ungrounded": [],
+   "model": "qwen.qwen3-vl-235b-a22b",
+   "model_emails": [
+    "darwish.omar@icloud.com"
+   ],
+   "model_ids": [
+    "analytics_7438"
+   ],
+   "name": "analytics_profile_view_20260713.png",
+   "records": [
+    {
+     "resource_id": "analytics_7438",
+     "resource_kind": "analytics",
+     "role": "primary",
+     "state_text": ""
+    }
+   ],
+   "tool": "tesseract",
+   "tool_emails": [
+    "darwish.omar@icloud.com"
+   ],
+   "tool_ids": [
+    "analytics_7438"
+   ],
+   "valid": true
+  },
+  {
+   "attempts": 1,
+   "document_type": "console_screenshot",
+   "emails_missed": [
+    "ingrid.dahi@outlook.com"
+   ],
+   "emails_ungrounded": [
+    "sara.kim@northstar.shop"
+   ],
+   "file_id": "evidence_23",
+   "ids_missed": [],
+   "ids_ungrounded": [],
+   "model": "qwen.qwen3-vl-235b-a22b",
+   "model_emails": [
+    "daniel.park@northstar.shop",
+    "ingrid.dahl@outlook.com",
+    "marcus.lee@northstar.shop",
+    "sara.kim@northstar.shop"
+   ],
+   "model_ids": [
+    "export_1258",
+    "export_1259",
+    "export_1260",
+    "export_1261"
+   ],
+   "name": "customer_export_console_20260618.png",
+   "records": [
+    {
+     "resource_id": "export_1260",
+     "resource_kind": "export",
+     "role": "primary",
+     "state_text": "Ready"
+    },
+    {
+     "resource_id": "export_1261",
+     "resource_kind": "export",
+     "role": "listed",
+     "state_text": "Collecting"
+    },
+    {
+     "resource_id": "export_1259",
+     "resource_kind": "export",
+     "role": "listed",
+     "state_text": "Packaging"
+    },
+    {
+     "resource_id": "export_1258",
+     "resource_kind": "export",
+     "role": "listed",
+     "state_text": "Ready"
+    }
+   ],
+   "tool": "tesseract",
+   "tool_emails": [
+    "daniel.park@northstar.shop",
+    "ingrid.dahi@outlook.com",
+    "ingrid.dahl@outlook.com",
+    "marcus.lee@northstar.shop"
+   ],
+   "tool_ids": [
+    "customer_export_1258",
+    "customer_export_1259",
+    "customer_export_1260",
+    "customer_export_1261",
+    "export_1258",
+    "export_1259",
+    "export_1260",
+    "export_1261"
+   ],
+   "valid": true
+  },
+  {
+   "attempts": 1,
+   "document_type": "register",
+   "emails_missed": [],
+   "emails_ungrounded": [],
+   "file_id": "evidence_27",
+   "ids_missed": [],
+   "ids_ungrounded": [],
+   "model": "qwen.qwen3-vl-235b-a22b",
+   "model_emails": [],
+   "model_ids": [
+    "ORD-20264118",
+    "ORD-20264207",
+    "ORD-20264319",
+    "ORD-20264402",
+    "ORD-20264511",
+    "ORD-20264600"
+   ],
+   "name": "legal_retention_register_20260529.pdf",
+   "records": [
+    {
+     "resource_id": "ORD-20264118",
+     "resource_kind": "order",
+     "role": "listed",
+     "state_text": "Retain until 04 May 2033"
+    },
+    {
+     "resource_id": "ORD-20264207",
+     "resource_kind": "order",
+     "role": "listed",
+     "state_text": "Retain until 09 May 2033"
+    },
+    {
+     "resource_id": "ORD-20264319",
+     "resource_kind": "order",
+     "role": "listed",
+     "state_text": "Retain until 14 May 2033"
+    },
+    {
+     "resource_id": "ORD-20264402",
+     "resource_kind": "order",
+     "role": "listed",
+     "state_text": "Retain until 18 May 2033"
+    },
+    {
+     "resource_id": "ORD-20264511",
+     "resource_kind": "order",
+     "role": "listed",
+     "state_text": "Retain until 23 May 2033"
+    },
+    {
+     "resource_id": "ORD-20264600",
+     "resource_kind": "order",
+     "role": "listed",
+     "state_text": "Retain until 28 May 2033"
+    }
+   ],
+   "tool": "pdftotext",
+   "tool_emails": [],
+   "tool_ids": [],
+   "valid": true
+  },
+  {
+   "attempts": 1,
+   "document_type": "console_screenshot",
+   "emails_missed": [],
+   "emails_ungrounded": [],
+   "file_id": "evidence_28",
+   "ids_missed": [],
+   "ids_ungrounded": [],
+   "model": "qwen.qwen3-vl-235b-a22b",
+   "model_emails": [
+    "kagyeman8947@fastmail.com"
+   ],
+   "model_ids": [
+    "ORD-20265034",
+    "support_1034"
+   ],
+   "name": "support_ticket_console_20260524.png",
+   "records": [
+    {
+     "resource_id": "support_1034",
+     "resource_kind": "support",
+     "role": "primary",
+     "state_text": ""
+    },
+    {
+     "resource_id": "ORD-20265034",
+     "resource_kind": "order",
+     "role": "listed",
+     "state_text": "In transit"
+    }
+   ],
+   "tool": "tesseract",
+   "tool_emails": [
+    "kagyeman8947@fastmail.com"
+   ],
+   "tool_ids": [
+    "support_1034"
+   ],
+   "valid": true
+  },
+  {
+   "attempts": 1,
+   "document_type": "console_screenshot",
+   "emails_missed": [],
+   "emails_ungrounded": [],
+   "file_id": "evidence_32",
+   "ids_missed": [
+    "backup_9281"
+   ],
+   "ids_ungrounded": [],
+   "model": "qwen.qwen3-vl-235b-a22b",
+   "model_emails": [
+    "areed1433@gmail.com",
+    "bluepeakco@outlook.com",
+    "miller.logistics@company.com",
+    "summit-retail@company.com"
+   ],
+   "model_ids": [
+    "backup_9286",
+    "backup_9287",
+    "backup_9288",
+    "backup_9291"
+   ],
+   "name": "backup_restore_console_20260429.png",
+   "records": [
+    {
+     "resource_id": "backup_9287",
+     "resource_kind": "backup",
+     "role": "primary",
+     "state_text": ""
+    },
+    {
+     "resource_id": "backup_9291",
+     "resource_kind": "backup",
+     "role": "listed",
+     "state_text": "Archive"
+    },
+    {
+     "resource_id": "backup_9288",
+     "resource_kind": "backup",
+     "role": "listed",
+     "state_text": "Archive"
+    },
+    {
+     "resource_id": "backup_9286",
+     "resource_kind": "backup",
+     "role": "listed",
+     "state_text": "Archive"
+    }
+   ],
+   "tool": "tesseract",
+   "tool_emails": [
+    "areed1433@gmail.com",
+    "bluepeakco@outlook.com",
+    "miller.logistics@company.com",
+    "summit-retail@company.com"
+   ],
+   "tool_ids": [
+    "backup_9281",
+    "backup_9286",
+    "backup_9287",
+    "backup_9288",
+    "backup_9291"
+   ],
+   "valid": true
+  },
+  {
+   "attempts": 1,
+   "document_type": "console_screenshot",
+   "emails_missed": [],
+   "emails_ungrounded": [],
+   "file_id": "evidence_37",
+   "ids_missed": [],
+   "ids_ungrounded": [],
+   "model": "qwen.qwen3-vl-235b-a22b",
+   "model_emails": [],
+   "model_ids": [
+    "audit_record_001",
+    "audit_record_002",
+    "audit_record_003",
+    "audit_record_004",
+    "audit_record_005",
+    "audit_record_006"
+   ],
+   "name": "security_audit_explorer_20260905.png",
+   "records": [
+    {
+     "resource_id": "audit_record_003",
+     "resource_kind": "audit_record",
+     "role": "primary",
+     "state_text": ""
+    },
+    {
+     "resource_id": "audit_record_002",
+     "resource_kind": "audit_record",
+     "role": "listed",
+     "state_text": ""
+    },
+    {
+     "resource_id": "audit_record_001",
+     "resource_kind": "audit_record",
+     "role": "listed",
+     "state_text": ""
+    },
+    {
+     "resource_id": "audit_record_006",
+     "resource_kind": "audit_record",
+     "role": "listed",
+     "state_text": ""
+    },
+    {
+     "resource_id": "audit_record_005",
+     "resource_kind": "audit_record",
+     "role": "listed",
+     "state_text": ""
+    },
+    {
+     "resource_id": "audit_record_004",
+     "resource_kind": "audit_record",
+     "role": "listed",
+     "state_text": ""
+    }
+   ],
+   "tool": "tesseract",
+   "tool_emails": [],
+   "tool_ids": [
+    "audit_record_001",
+    "audit_record_002",
+    "audit_record_003",
+    "audit_record_004",
+    "audit_record_005",
+    "audit_record_006"
+   ],
+   "valid": true
+  },
+  {
+   "attempts": 2,
+   "document_type": "console_screenshot",
+   "emails_missed": [],
+   "emails_ungrounded": [],
+   "file_id": "evidence_42",
+   "ids_missed": [],
+   "ids_ungrounded": [],
+   "model": "qwen.qwen3-vl-235b-a22b",
+   "model_emails": [],
+   "model_ids": [
+    "CS-3245",
+    "CS-3378",
+    "FIN-7742",
+    "ORD-20263245",
+    "user_17"
+   ],
+   "name": "deleted_account_reference_20260310.png",
+   "records": [
+    {
+     "resource_id": "user_17",
+     "resource_kind": "other",
+     "role": "primary",
+     "state_text": "Retained reference"
+    },
+    {
+     "resource_id": "ORD-20263245",
+     "resource_kind": "order",
+     "role": "listed",
+     "state_text": "Active"
+    },
+    {
+     "resource_id": "CS-3245",
+     "resource_kind": "support",
+     "role": "listed",
+     "state_text": "Active"
+    },
+    {
+     "resource_id": "CS-3378",
+     "resource_kind": "support",
+     "role": "listed",
+     "state_text": "Active"
+    },
+    {
+     "resource_id": "FIN-7742",
+     "resource_kind": "other",
+     "role": "listed",
+     "state_text": "Active"
+    }
+   ],
+   "tool": "tesseract",
+   "tool_emails": [],
+   "tool_ids": [],
+   "valid": true
+  },
+  {
+   "attempts": 1,
+   "document_type": "console_screenshot",
+   "emails_missed": [],
+   "emails_ungrounded": [],
+   "file_id": "evidence_46",
+   "ids_missed": [
+    "customer_export_2026"
+   ],
+   "ids_ungrounded": [
+    "invoice_NS-10493.pdf",
+    "return_label_4821.pdf",
+    "return_label_4876.pdf"
+   ],
+   "model": "qwen.qwen3-vl-235b-a22b",
+   "model_emails": [],
+   "model_ids": [
+    "customer_export_2026-02-10.zip",
+    "customer_export_2026-02-12.zip",
+    "delivery_confirmation_19.pdf",
+    "delivery_confirmation_20.pdf",
+    "invoice_NS-10493.pdf",
+    "northstar-customer-data",
+    "parcel_damage_7713.jpg",
+    "return_label_4821.pdf",
+    "return_label_4876.pdf"
+   ],
+   "name": "object_storage_browser_20260213.png",
+   "records": [
+    {
+     "resource_id": "northstar-customer-data",
+     "resource_kind": "object",
+     "role": "primary",
+     "state_text": ""
+    },
+    {
+     "resource_id": "delivery_confirmation_19.pdf",
+     "resource_kind": "object",
+     "role": "listed",
+     "state_text": ""
+    },
+    {
+     "resource_id": "delivery_confirmation_20.pdf",
+     "resource_kind": "object",
+     "role": "listed",
+     "state_text": ""
+    },
+    {
+     "resource_id": "return_label_4821.pdf",
+     "resource_kind": "object",
+     "role": "listed",
+     "state_text": ""
+    },
+    {
+     "resource_id": "return_label_4876.pdf",
+     "resource_kind": "object",
+     "role": "listed",
+     "state_text": ""
+    },
+    {
+     "resource_id": "invoice_NS-10493.pdf",
+     "resource_kind": "object",
+     "role": "listed",
+     "state_text": ""
+    },
+    {
+     "resource_id": "parcel_damage_7713.jpg",
+     "resource_kind": "object",
+     "role": "listed",
+     "state_text": ""
+    },
+    {
+     "resource_id": "customer_export_2026-02-10.zip",
+     "resource_kind": "object",
+     "role": "listed",
+     "state_text": ""
+    },
+    {
+     "resource_id": "customer_export_2026-02-12.zip",
+     "resource_kind": "object",
+     "role": "listed",
+     "state_text": ""
+    }
+   ],
+   "tool": "tesseract",
+   "tool_emails": [],
+   "tool_ids": [
+    "customer_export_2026"
+   ],
+   "valid": true
+  },
+  {
+   "attempts": 1,
+   "document_type": "journal",
+   "emails_missed": [],
+   "emails_ungrounded": [],
+   "file_id": "evidence_55",
+   "ids_missed": [],
+   "ids_ungrounded": [],
+   "model": "qwen.qwen3-vl-235b-a22b",
+   "model_emails": [],
+   "model_ids": [
+    "audit_record_003"
+   ],
+   "name": "security_retention_extract.pdf",
+   "records": [
+    {
+     "resource_id": "audit_record_003",
+     "resource_kind": "audit_record",
+     "role": "primary",
+     "state_text": ""
+    }
+   ],
+   "tool": "pdftotext",
+   "tool_emails": [],
+   "tool_ids": [
+    "audit_record_003"
+   ],
+   "valid": true
+  },
+  {
+   "attempts": 1,
+   "document_type": "attachment",
+   "emails_missed": [],
+   "emails_ungrounded": [],
+   "file_id": "evidence_58",
+   "ids_missed": [],
+   "ids_ungrounded": [],
+   "model": "qwen.qwen3-vl-235b-a22b",
+   "model_emails": [
+    "priya.raman@gmail.com"
+   ],
+   "model_ids": [
+    "support_001"
+   ],
+   "name": "delivery_correction_attachment.pdf",
+   "records": [
+    {
+     "resource_id": "support_001",
+     "resource_kind": "support",
+     "role": "primary",
+     "state_text": ""
+    }
+   ],
+   "tool": "pdftotext",
+   "tool_emails": [
+    "priya.raman@gmail.com"
+   ],
+   "tool_ids": [
+    "support_001"
+   ],
+   "valid": true
+  },
+  {
+   "attempts": 1,
+   "document_type": "console_screenshot",
+   "emails_missed": [
+    "sj-park@naver.com"
+   ],
+   "emails_ungrounded": [
+    "sj.park@naver.com"
+   ],
+   "file_id": "evidence_60",
+   "ids_missed": [],
+   "ids_ungrounded": [],
+   "model": "qwen.qwen3-vl-235b-a22b",
+   "model_emails": [
+    "sj.park@naver.com"
+   ],
+   "model_ids": [
+    "marketing_001"
+   ],
+   "name": "marketing_profile_console.png",
+   "records": [
+    {
+     "resource_id": "marketing_001",
+     "resource_kind": "marketing",
+     "role": "primary",
+     "state_text": "Live"
+    }
+   ],
+   "tool": "tesseract",
+   "tool_emails": [
+    "sj-park@naver.com"
+   ],
+   "tool_ids": [
+    "marketing_001"
+   ],
+   "valid": true
+  }
+ ],
+ "model": "qwen.qwen3-vl-235b-a22b",
+ "usage": {
+  "qwen.qwen3-vl-235b-a22b": {
+   "cached_calls": 16,
+   "calls": 16,
+   "estimated_cost_usd": 0.020027,
+   "input_tokens": 46047,
+   "live_calls": 0,
+   "output_tokens": 6056
+  }
+ }
+}
