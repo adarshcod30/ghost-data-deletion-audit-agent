@@ -1,0 +1,121 @@
+"""The resolved case ledger: every resource that belongs to the subject, with its state at audit_at.
+
+Everything downstream (status, findings, remediation, verification, order) is a function of
+this ledger. Nothing is written to a step that is not a ledger entry.
+"""
+from __future__ import annotations
+
+from dataclasses import dataclass, field
+
+from .common import case_sort_key
+from .evidence import EvidenceIndex, resource_prefix
+from .identity import Subject
+from .linking import link_resources
+from .models import DeletionRequest
+from .policy import Policy
+from .state import Observation, interpret
+
+
+@dataclass(frozen=True, slots=True)
+class LedgerEntry:
+    resource_id: str
+    system_id: str
+    prefix: str
+    action: str | None            # DELETE | REDACT | ANONYMIZE | RETAIN | FLOW | None
+    state: str                    # state at audit_at, or UNKNOWN
+    evidence_id: str              # file that proves that state ("" when none)
+    observation: Observation | None
+    inferred: bool = False        # True when no observation exists and the state is assumed
+
+
+@dataclass(frozen=True, slots=True)
+class CaseLedger:
+    case_id: str
+    subject: Subject
+    entries: tuple[LedgerEntry, ...] = field(default_factory=tuple)
+
+
+def observations_for(resource_id: str, index: EvidenceIndex) -> list[Observation]:
+    out: list[Observation] = []
+    for rec in index.for_resource(resource_id):
+        if rec.kind == "log_trace":
+            continue  # traces link resources; each line states its own outcome
+        obs = interpret(rec, resource_id)
+        if obs is not None:
+            out.append(obs)
+    return out
+
+
+def choose_observation(observations: list[Observation], request: DeletionRequest) -> Observation | None:
+    """The state at audit_at.
+
+    Prefer the latest observation made at or before audit_at in a file that was itself captured by
+    then, because only such a file may be cited. If every observation sits in a later export (the
+    log lines are dated before audit_at but the file was captured after), use the latest of those
+    for the state and leave the citation empty. If the resource was only ever seen after audit_at,
+    use the earliest sighting.
+    """
+    citable = [o for o in observations if o.time <= request.audit_at and o.file_captured_at <= request.audit_at]
+    if citable:
+        return max(citable, key=lambda o: (o.time, case_sort_key(o.file_id)))
+    dated = [o for o in observations if o.time <= request.audit_at]
+    if dated:
+        return max(dated, key=lambda o: (o.time, case_sort_key(o.file_id)))
+    return min(observations, key=lambda o: (o.time, case_sort_key(o.file_id))) if observations else None
+
+
+def absence_proof(system: str, resource_id: str, request: DeletionRequest, index: EvidenceIndex) -> str:
+    """A file that covers `system` at or before audit_at and does not contain the resource."""
+    mentioned = {r.file_id for r in index.for_resource(resource_id)}
+    best = None
+    for scope in index.scopes:
+        if scope.system != system or scope.file_id in mentioned or scope.snapshot_at > request.audit_at:
+            continue
+        if best is None or (scope.snapshot_at, case_sort_key(scope.file_id)) > (best.snapshot_at, case_sort_key(best.file_id)):
+            best = scope
+    return best.file_id if best else ""
+
+
+NON_FINAL_STATES = {"PRESENT", "IDENTIFIABLE", "ACTIVE"}
+
+
+def relevant_resources(request: DeletionRequest, subject: Subject, index: EvidenceIndex) -> list[str]:
+    """Resources that belong to this case.
+
+    A resource linked only by evidence dated before the request counts only if that evidence shows
+    data that still exists (present, identifiable or active). A lookup that came back empty months
+    earlier says nothing about this request.
+    """
+    keep: list[str] = []
+    for resource_id, records in link_resources(subject, index).items():
+        after = [r for r in records if (r.record_time or r.captured_at) >= request.requested_at]
+        if not after:
+            states = [o.state for r in records if (o := interpret(r, resource_id)) is not None]
+            if not any(state in NON_FINAL_STATES for state in states):
+                continue
+        keep.append(resource_id)
+    return sorted(keep, key=case_sort_key)
+
+
+def build_ledger(request: DeletionRequest, subject: Subject, index: EvidenceIndex, policy: Policy) -> CaseLedger:
+    entries: list[LedgerEntry] = []
+    for resource_id in relevant_resources(request, subject, index):
+        prefix = resource_prefix(resource_id)
+        system = index.system_of(resource_id)
+        if system is None:
+            continue
+        obs = choose_observation(observations_for(resource_id, index), request)
+        if obs is None:
+            if prefix == "account":
+                # Linked by another record (a search document names its source account) but no live
+                # profile was ever observed: the account is gone, proved by a snapshot that covers
+                # the account service and does not contain it.
+                entries.append(LedgerEntry(resource_id, system, prefix, policy.action(prefix), "ABSENT",
+                                           absence_proof(system, resource_id, request, index), None, inferred=True))
+            continue
+        action = policy.action(prefix, obs.subtype)
+        if action is None:
+            continue
+        cited = obs.file_id if obs.file_captured_at <= request.audit_at else ""
+        entries.append(LedgerEntry(resource_id, system, prefix, action, obs.state, cited, obs))
+    return CaseLedger(request.case_id, subject, tuple(entries))
