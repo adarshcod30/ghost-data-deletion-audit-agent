@@ -181,7 +181,7 @@ def interpret(rec: EvidenceRecord, resource_id: str) -> Observation | None:
     else:  # audit_record, legal_hold, marketing, cache, object, email_delivery and the rest
         if result == "NOT_FOUND" or rows == 0:
             state = "ABSENT"
-        elif (result in ("FOUND", "PRESENT") or rec.kind in ("sql_row", "json_record", "text_line")
+        elif (result in ("FOUND", "PRESENT") or rec.kind in ("sql_row", "json_record", "text_line", "document", "document_line")
               or rows_found(f) or event.endswith(("_completed", "_loaded"))):
             state = "PRESENT"
     if state is None:

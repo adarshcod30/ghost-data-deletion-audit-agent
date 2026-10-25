@@ -136,7 +136,7 @@ All accuracy numbers are on the 32 public samples, the only cases with reference
 
 The 14 missing sample steps are all verification steps for resources that no evidence ties to the case (7 anonymized analytics profiles, 5 deleted accounts, 2 audit records). The tool leaves a step out rather than guess a link.
 
-**Final run on the 518 requests:** 164 COMPLETE, 344 INCOMPLETE, 10 NOT_APPLICABLE; 2970 steps; 0 contract problems. Three cases (case_45, case_61, case_63) have no identifiable resource in admissible evidence and are answered COMPLETE with no steps.
+**Final run on the 518 requests:** 164 COMPLETE, 344 INCOMPLETE, 10 NOT_APPLICABLE; 2971 steps; 0 contract problems. Three cases (case_45, case_61, case_63) have no identifiable resource in admissible evidence and are answered COMPLETE with no steps.
 
 **Models:** the rule classifier, Qwen3-VL and Kimi K2.5 agree on all 398 distinct request texts. The final run made 750 model calls, 467047 input and 26555 output tokens, about 0.2586 USD at list price (`code/evaluation/usage_report.md`).
 

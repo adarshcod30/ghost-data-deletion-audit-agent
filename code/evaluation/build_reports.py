@@ -51,7 +51,7 @@ LIMITS = [
     "The only gold answers are the 32 public samples. There is no gold for the 518 evaluation cases, so hidden-set accuracy is not measured and is expected to be below the sample numbers.",
     "All 14 missing sample steps are verification steps for resources that no evidence ties to the case: 7 anonymized analytics profiles, 5 deleted accounts and 2 audit records. Where the link is not forced we leave the step out rather than guess, so precision stays 1.0 and recall is 0.9275.",
     "Three evaluation cases (case_45, case_61, case_63) have no identifiable resource in admissible evidence and are answered COMPLETE with no steps. They are flagged in the run output.",
-    "31 resources that evidence ties to a case are left out of its answer because their state is unreadable or the contract has no operation for them. They are counted in the run output and listed in runs/audit.jsonl (see adversarial_review.md, open defect 1).",
+    "30 resources that evidence ties to a case are left out of its answer because their state is unreadable or the contract has no operation for them. They are counted in the run output and listed in runs/audit.jsonl (see adversarial_review.md, open defect 1).",
     "The vision reader is evaluated on 15 files and is not wired into output.csv.",
     "The model cross-check can only disagree with the rules; it never changes a row. It found no disagreement.",
 ]
