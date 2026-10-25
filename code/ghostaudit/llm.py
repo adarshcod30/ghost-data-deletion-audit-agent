@@ -14,10 +14,10 @@ from collections import defaultdict
 from dataclasses import dataclass
 from pathlib import Path
 
-from .common import REPO_ROOT
 
 DEFAULT_REGION = "us-east-1"
-DEFAULT_CACHE_DIR = REPO_ROOT / ".cache" / "llm"
+# Shipped with the code: every model answer the final run needs, so a cold run needs no network.
+DEFAULT_CACHE_DIR = Path(__file__).resolve().parents[1] / "llm_cache"
 
 # Bedrock on-demand prices in USD per 1M tokens (input, output), standard tier, us-east-1.
 # Source: AWS Price List API (service AmazonBedrockFoundationModels), queried 2026-10-25.

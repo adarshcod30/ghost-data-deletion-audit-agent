@@ -134,7 +134,7 @@ def main() -> int:
     parser.add_argument("--out", default=str(REPO_ROOT / "code" / "evaluation" / "document_benchmark.json"))
     parser.add_argument("--profile", default=None)
     args = parser.parse_args()
-    client = BedrockClient(profile=args.profile, cache_dir=REPO_ROOT / ".cache" / "llm")
+    client = BedrockClient(profile=args.profile)
     model = args.model or PRIMARY_MODEL_ID
     import boto3
     session = boto3.Session(profile_name=args.profile, region_name=client.region)

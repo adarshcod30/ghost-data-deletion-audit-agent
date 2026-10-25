@@ -17,9 +17,11 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from ghostaudit.common import REPO_ROOT, case_sort_key  # noqa: E402
+from ghostaudit.crosscheck import crosscheck, is_disputed, vote  # noqa: E402
 from ghostaudit.data import DatasetError, load_dataset  # noqa: E402
 from ghostaudit.evidence import EvidenceIndexError, build_index  # noqa: E402
 from ghostaudit.identity import IdentityResolver  # noqa: E402
+from ghostaudit.llm import BedrockClient  # noqa: E402
 from ghostaudit.pipeline import Pipeline  # noqa: E402
 from ghostaudit.verify import serialize_steps, verify_row  # noqa: E402
 
@@ -134,7 +136,31 @@ def cmd_run(args: argparse.Namespace) -> int:
     print(f"wrote {len(rows)} rows to {destination.name}: {dict(sorted(counts.items()))}, {steps} steps, 0 contract problems")
     print(f"workflow account links: {pipeline.workflow.stats}")
     print(f"unidentified cases (COMPLETE, no steps): {len(unidentified_cases)} {unidentified_cases}")
+    if not getattr(args, "no_models", False):
+        run_model_stage(dataset, out_dir)
     return 0
+
+
+def run_model_stage(dataset, out_dir: Path) -> None:
+    """Ask two models whether each request authorises deletion and record the usage of that stage.
+
+    The answers are compared with the rule baseline and written to runs/crosscheck.json. They never
+    change a row of output.csv. Calls are served from the shipped cache (code/llm_cache), so a cold
+    run needs no network and no credentials; a missing entry is fetched from Bedrock when credentials exist.
+    """
+    client = BedrockClient()
+    rows = crosscheck(client, [r.request_text for r in dataset.requests])
+    unusable = sum("error" in row[k] for row in rows for k in ("primary", "second"))
+    disputed = [row for row in rows if is_disputed(row)]
+    summary = {"stage": "classifier_crosscheck", "requests": len(dataset.requests), "distinct_texts": len(rows),
+               "unusable_answers": unusable, "disputed_texts": len(disputed), "models": client.ledger.summary()}
+    (out_dir / "usage.json").write_text(json.dumps(summary, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    (out_dir / "crosscheck.json").write_text(json.dumps(
+        [{"text": r["text"], "baseline": r["baseline"], "primary": vote(r, "primary"), "second": vote(r, "second")}
+         for r in disputed], indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    calls = sum(m["calls"] for m in summary["models"].values())
+    print(f"model cross-check: {len(rows)} distinct texts, {calls} model calls, {unusable} unusable answers, "
+          f"{len(disputed)} disputed (none change output.csv)")
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -144,6 +170,7 @@ def main(argv: list[str] | None = None) -> int:
     sub.add_parser("index", help="index every evidence file (Phase 2)")
     run = sub.add_parser("run", help="answer every request and write output.csv (verified)")
     run.add_argument("--output", help="write here instead of ./output.csv")
+    run.add_argument("--no-models", action="store_true", help="skip the model cross-check stage")
     args = parser.parse_args(argv)
     return {"identities": cmd_identities, "index": cmd_index, "run": cmd_run}[args.command](args)
 

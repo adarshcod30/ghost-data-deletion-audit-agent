@@ -130,7 +130,7 @@ def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--profile", default=None, help="AWS profile; default is the standard credential chain")
     args = parser.parse_args()
-    client = BedrockClient(profile=args.profile, cache_dir=REPO_ROOT / ".cache" / "llm")
+    client = BedrockClient(profile=args.profile)
     probe = build_probe(load_dataset())
     ids = resolve_model_ids(client)
     print(f"probe items: {len(probe)} ({sum(p['label'] for p in probe)} deletion, "

@@ -97,7 +97,7 @@ def run_scenario(client: BedrockClient, model_id: str, sc: dict) -> dict:
 
 
 def main() -> int:
-    client = BedrockClient(profile=None, cache_dir=REPO_ROOT / ".cache" / "llm")
+    client = BedrockClient(profile=None)
     ids = mb.resolve_model_ids(client)
     bench = json.loads((REPO_ROOT / "runs" / "model_benchmark.json").read_text(encoding="utf-8"))
     usable = [r["model"] for r in bench["results"]]

@@ -22,30 +22,14 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from ghostaudit.classifier import baseline_authorizes_deletion  # noqa: E402
-from ghostaudit.common import REPO_ROOT, case_sort_key  # noqa: E402
+from ghostaudit.common import case_sort_key  # noqa: E402
+from ghostaudit.crosscheck import MODELS, crosscheck, is_disputed, vote  # noqa: E402
 from ghostaudit.config import PRIMARY_MODEL_ID, SECOND_MODEL_ID  # noqa: E402
 from ghostaudit.data import load_dataset  # noqa: E402
-from ghostaudit.llm import BedrockClient, LLMUnavailable, cost_usd, extract_json_object  # noqa: E402
+from ghostaudit.llm import BedrockClient, cost_usd  # noqa: E402
 
-PROMPT = (Path(__file__).resolve().parents[1] / "prompts" / "request_classifier.md").read_text(encoding="utf-8")
 OUT_JSON = Path(__file__).resolve().parent / "classifier_crosscheck.json"
 OUT_MD = Path(__file__).resolve().parent / "classifier_crosscheck.md"
-MODELS = {"primary": PRIMARY_MODEL_ID, "second": SECOND_MODEL_ID}
-
-
-def ask(client: BedrockClient, model_id: str, text: str) -> dict:
-    """One classification. Same prompt and message shape as model_benchmark.py, so calls share the cache."""
-    user = f"<request_text>{text}</request_text>"
-    try:
-        result = client.converse(model_id, user, system=PROMPT, max_tokens=700, purpose="classifier_crosscheck")
-    except LLMUnavailable as exc:
-        return {"error": str(exc)[:120]}
-    parsed = extract_json_object(result.text)
-    if not (isinstance(parsed, dict) and isinstance(parsed.get("authorizes_deletion"), bool)):
-        return {"error": "invalid json", "raw": result.text[:160]}
-    return {"decision": parsed["authorizes_deletion"], "type": parsed.get("request_type"),
-            "language": parsed.get("language"), "evidence": parsed.get("evidence")}
 
 
 def main() -> int:
@@ -53,37 +37,25 @@ def main() -> int:
     parser.add_argument("--profile", default=None)
     args = parser.parse_args()
     dataset = load_dataset()
-    client = BedrockClient(profile=args.profile, cache_dir=REPO_ROOT / ".cache" / "llm")
+    client = BedrockClient(profile=args.profile)
 
     cases: dict[str, list[str]] = {}       # request text -> case ids that carry it
     for request in list(dataset.requests) + list(dataset.sample_requests):
         cases.setdefault(request.request_text, []).append(request.case_id)
     texts = sorted(cases)
     print(f"{len(texts)} distinct request texts across {sum(len(v) for v in cases.values())} cases")
-
-    answers: dict[str, dict[str, dict]] = {name: {} for name in MODELS}
+    rows = crosscheck(client, texts)
+    for row in rows:
+        row["cases"] = sorted(cases[row["text"]], key=case_sort_key)
     for name, model_id in MODELS.items():
-        with ThreadPoolExecutor(8) as pool:
-            for text, out in zip(texts, pool.map(lambda t: ask(client, model_id, t), texts)):
-                answers[name][text] = out
-        bad = sum("error" in o for o in answers[name].values())
-        print(f"{name:8s} {model_id}: {len(texts) - bad} valid, {bad} unusable")
-
-    rows = []
-    for text in texts:
-        base, why = baseline_authorizes_deletion(text)
-        primary, second = answers["primary"][text], answers["second"][text]
-        rows.append({"cases": sorted(cases[text], key=case_sort_key), "text": text, "baseline": base,
-                     "baseline_reason": why, "primary": primary, "second": second})
+        bad = sum("error" in row[name] for row in rows)
+        print(f"{name:8s} {model_id}: {len(rows) - bad} valid, {bad} unusable")
 
     def verdict(row, key):
-        return row[key].get("decision") if "decision" in row[key] else None
+        return vote(row, key)
 
-    disputed = []
-    for row in rows:
-        votes = {"baseline": row["baseline"], "primary": verdict(row, "primary"), "second": verdict(row, "second")}
-        if len({v for v in votes.values() if v is not None}) > 1 or any(v is None for v in votes.values()):
-            disputed.append({**row, "votes": votes})
+    disputed = [{**row, "votes": {"baseline": row["baseline"], "primary": vote(row, "primary"), "second": vote(row, "second")}}
+                for row in rows if is_disputed(row)]
 
     def agree(a, b):
         pairs = [(x, y) for x, y in ((a(r), b(r)) for r in rows) if x is not None and y is not None]
@@ -115,10 +87,9 @@ def main() -> int:
     lines += [f"| {name} | {a} | {n} |" for name, (a, n) in pair_rows]
     lines += ["", f"Texts with any disagreement or unusable answer: **{len(disputed)}**.", ""]
     for model_id, entry in sorted(usage.items()):
-        lines.append(f"* `{model_id}`: {entry['calls']} calls this run ({entry['live_calls']} live, "
-                     f"{entry['cached_calls']} cached), {entry['input_tokens']} input and {entry['output_tokens']} "
+        lines.append(f"* `{model_id}`: {entry['calls']} calls, {entry['input_tokens']} input and {entry['output_tokens']} "
                      f"output tokens, about ${cost_usd(model_id, entry['input_tokens'], entry['output_tokens'])} "
-                     f"for the live and cached tokens counted together.")
+                     f"at list price.")
     lines += ["", "## Disputed texts", ""]
     for row in disputed:
         votes = row["votes"]
