@@ -33,6 +33,7 @@ class CaseLedger:
     case_id: str
     subject: Subject
     entries: tuple[LedgerEntry, ...] = field(default_factory=tuple)
+    dropped: tuple[tuple[str, str], ...] = ()   # (resource_id, reason): linked to the subject but left out of the ledger
 
 
 def observations_for(resource_id: str, index: EvidenceIndex, audit_at=None) -> list[Observation]:
@@ -48,6 +49,11 @@ def observations_for(resource_id: str, index: EvidenceIndex, audit_at=None) -> l
     return out
 
 
+def _recency(o: Observation) -> tuple:
+    """Latest wins. On an exact timestamp tie the unsafe reading (data still there) wins, never the file number."""
+    return (o.time, o.state in NON_FINAL_STATES, case_sort_key(o.file_id))
+
+
 def choose_observation(observations: list[Observation], request: DeletionRequest) -> Observation | None:
     """The state at audit_at.
 
@@ -58,10 +64,10 @@ def choose_observation(observations: list[Observation], request: DeletionRequest
     """
     citable = [o for o in observations if o.time <= request.audit_at and o.file_captured_at <= request.audit_at]
     if citable:
-        return max(citable, key=lambda o: (o.time, case_sort_key(o.file_id)))
+        return max(citable, key=_recency)
     dated = [o for o in observations if o.time <= request.audit_at]
     if dated:
-        return max(dated, key=lambda o: (o.time, case_sort_key(o.file_id)))
+        return max(dated, key=_recency)
     retained = [o for o in observations if resource_prefix(o.resource_id) in RETAINED_PREFIXES]
     if retained:  # append-only records: seen in a later snapshot, so they existed
         return min(retained, key=lambda o: (o.time, case_sort_key(o.file_id)))
@@ -130,11 +136,13 @@ def build_ledger(request: DeletionRequest, subject: Subject, index: EvidenceInde
     """`workflow_resources` are anonymous resources tied to this case through the activity log
     (see workflow.py); they are added to the identifier-linked ones."""
     entries: list[LedgerEntry] = []
+    dropped: list[tuple[str, str]] = []
     resource_ids = sorted(set(relevant_resources(request, subject, index)) | set(workflow_resources), key=case_sort_key)
     for resource_id in resource_ids:
         prefix = resource_prefix(resource_id)
         system = index.system_of(resource_id)
         if system is None:
+            dropped.append((resource_id, "no system known for this id prefix"))
             continue
         found = observations_for(resource_id, index, request.audit_at)
         obs = choose_observation(found, request)
@@ -145,12 +153,15 @@ def build_ledger(request: DeletionRequest, subject: Subject, index: EvidenceInde
                 # the account service and does not contain it.
                 entries.append(LedgerEntry(resource_id, system, prefix, policy.action(prefix), "ABSENT",
                                            absence_proof(system, resource_id, request, index), None, inferred=True))
+            else:
+                dropped.append((resource_id, "linked, but no admissible record states its condition"))
             continue
         action = policy.action(prefix, obs.subtype)
         if action is None:
+            dropped.append((resource_id, "no policy action for this resource type"))
             continue
         cited = obs.file_id if obs.file_captured_at <= request.audit_at else ""
         if not cited:
             cited = find_citation(resource_id, obs.state, system, request, index, found)
         entries.append(LedgerEntry(resource_id, system, prefix, action, obs.state, cited, obs))
-    return CaseLedger(request.case_id, subject, tuple(entries))
+    return CaseLedger(request.case_id, subject, tuple(entries), tuple(dropped))

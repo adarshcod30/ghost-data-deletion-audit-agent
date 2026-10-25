@@ -74,6 +74,7 @@ Expected answers are written by hand from AGENTS.md section 6 in `code/evaluatio
 | Tombstones and linking: a name match could attach a stranger's record | Names never link. Only email, email hash, phone and user id do, as of the audit time. |
 | SQL evidence: the sqlite authorizer rejected PRAGMA and REINDEX in snapshots | The authorizer now allows those statements; every SQL file indexes (94 of 94 files). |
 | Vision reader returned a user reference as a resource id (user_20 instead of analytics_7438) | Prompt rule and example added; rerun correct. Schema widened to printed ids such as order numbers. |
+| Adversarial review: a stray result=NOT_FOUND inside a live record, a timestamp tie decided by file number, and an analytics row without an email key each produced a false COMPLETE | Fixed in state.py and ledger.py with reproductions in adversarial_review.md; the 518 outputs did not change. The row verifier now also rejects duplicates, unfinished findings and citations of files that do not name the resource. |
 | Request classifier treated 'please fix my billing address' as a deletion request (found by a custom case) | Added fix, amend, edit and modify to the correction verbs. The 518 outputs did not change. |
 
 ## Known limits
@@ -81,5 +82,6 @@ Expected answers are written by hand from AGENTS.md section 6 in `code/evaluatio
 * The only gold answers are the 32 public samples. There is no gold for the 518 evaluation cases, so hidden-set accuracy is not measured and is expected to be below the sample numbers.
 * All 14 missing sample steps are verification steps for resources that no evidence ties to the case: 7 anonymized analytics profiles, 5 deleted accounts and 2 audit records. Where the link is not forced we leave the step out rather than guess, so precision stays 1.0 and recall is 0.9275.
 * Three evaluation cases (case_45, case_61, case_63) have no identifiable resource in admissible evidence and are answered COMPLETE with no steps. They are flagged in the run output.
+* 31 resources that evidence ties to a case are left out of its answer because their state is unreadable or the contract has no operation for them. They are counted in the run output and listed in runs/audit.jsonl (see adversarial_review.md, open defect 1).
 * The vision reader is evaluated on 15 files and is not wired into output.csv.
 * The model cross-check can only disagree with the rules; it never changes a row. It found no disagreement.

@@ -48,6 +48,7 @@ The output is `output.csv` with `case_id,deletion_status,steps_json`: findings w
 | Row verifier | Every row is checked against the submission contract before the file is written. |
 | Model cross-check | Two Bedrock models re-read every request; disagreements are reported and never applied. |
 | Vision reader | Qwen3-VL reads PDFs and screenshots into a strict schema; benchmarked, not wired into the output. |
+| Adversarial suite | 49 attacks on synthetic data (identity, evidence, policy, state flow, output rules); 31 blocked, 17 detected, 1 documented open defect. |
 
 ## Tech Stack
 
@@ -149,7 +150,7 @@ One rule, used everywhere in this repository:
 
 ## Deployment and Infrastructure
 
-This is a batch command-line tool. There is no hosting, CI/CD, monitoring or environment split. It runs on a laptop in about a minute from cache. The only external service is Amazon Bedrock, and only when a cache entry is missing. Credentials come from the standard AWS environment variables or profile; the code never reads or logs a secret.
+This is a batch command-line tool. There is no hosting, CI/CD, monitoring or environment split. Measured on an Apple M4 with Python 3.13.7: a cold run from the unzipped archive (no OCR cache, no credentials) takes 4.8 s and peaks at 84 MB; a warm rerun takes 0.5 s and 50 MB. Almost all of the cold time is OCR of the 11 screenshots. The only external service is Amazon Bedrock, and only when a cache entry is missing. Credentials come from the standard AWS environment variables or profile; the code never reads or logs a secret.
 
 ## Project Structure
 
@@ -176,6 +177,9 @@ code/
     evaluation_report.md usage_report.md      required reports
     main.py custom_cases.py build_reports.py  scoring, custom cases, report generator
     classifier_crosscheck.* document_benchmark.* model_benchmark.* tool_use_benchmark.* audit.py
+    adversarial_review.md  adversarial_attacks.py   49 attacks and their results
+    metric_audit.md  independent_metrics.py          independent recomputation of the metrics, leakage review
+    contract_check.py                                standalone checker for output.csv (shares no code with the verifier)
   tools/package_submission.py   builds code.zip from a clean tree
   tests/
 evaluation/               exact copy of the two required reports, at the path the contract names
@@ -222,6 +226,9 @@ This writes `output.csv` in the repository root, `runs/usage.json` and `runs/cro
 | `python3 code/evaluation/main.py --diff` | Score against the 32 public samples and print every missing or extra step. |
 | `python3 code/evaluation/custom_cases.py` | Run the hand-written custom cases. |
 | `python3 code/evaluation/build_reports.py` | Regenerate the two required reports from the last run. |
+| `python3 code/evaluation/contract_check.py output.csv` | Independent check of the output file against the contract. |
+| `python3 code/evaluation/adversarial_review.py --write` | Run the 49 adversarial attacks and write `adversarial_review.md`. |
+| `python3 code/evaluation/independent_metrics.py --write` | Recompute the sample metrics without the scorer and write `metric_audit.md`. |
 | `python3 code/evaluation/audit.py --seed 20261025 --n 12` | Print raw evidence beside our answer for a seeded random sample of hidden cases. |
 
 ## Testing
@@ -230,7 +237,7 @@ This writes `output.csv` in the repository root, `runs/usage.json` and `runs/cro
 python3 -m pytest code/tests -q
 ```
 
-The suite covers loading, identity resolution, evidence indexing, state interpretation, the planner, the verifier, the classifier, the vision schema, the cache key, determinism across hash seeds, the custom cases, and a consistency test that checks this README against the generated reports and the code.
+The suite (including the adversarial attacks, the security checks and the documentation consistency test) covers loading, identity resolution, evidence indexing, state interpretation, the planner, the verifier, the classifier, the vision schema, the cache key, determinism across hash seeds, the custom cases, and a consistency test that checks this README against the generated reports and the code.
 
 ## Roadmap
 

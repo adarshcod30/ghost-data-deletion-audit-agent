@@ -100,7 +100,9 @@ def interpret(rec: EvidenceRecord, resource_id: str) -> Observation | None:
 
     if prefix == "account":
         status = f.get("account_status")
-        if result == "NOT_FOUND" or rows == 0 or http == 404:
+        if rec.kind in ("sql_row", "json_record") and not is_null(status):
+            state = "PRESENT"   # the record's own live fields outrank a stray result or rows claim inside it
+        elif result == "NOT_FOUND" or rows == 0 or http == 404:
             state = "ABSENT"
         elif result == "FOUND" or rows == 1 or http == 200 or not is_null(status):
             state = "PRESENT"
@@ -114,6 +116,9 @@ def interpret(rec: EvidenceRecord, resource_id: str) -> Observation | None:
         elif event == "analytics_identity_scan" or not is_null(f.get("matched_value")):
             state = "IDENTIFIABLE"
         elif "email" in f or "customer_reference" in f or event.startswith("analytics_profile_read"):
+            direct = any(not is_null(f.get(k)) for k in ("email", "phone", "email_hash", "customer_reference", "user_id"))
+            state = "IDENTIFIABLE" if direct else "ANONYMIZED"
+        elif rec.kind in ("json_record", "sql_row"):  # a structured row is read by its columns, whichever keys it carries
             direct = any(not is_null(f.get(k)) for k in ("email", "phone", "email_hash", "customer_reference", "user_id"))
             state = "IDENTIFIABLE" if direct else "ANONYMIZED"
     elif prefix == "support":
@@ -136,7 +141,10 @@ def interpret(rec: EvidenceRecord, resource_id: str) -> Observation | None:
                 state = "IDENTIFIABLE" if direct else "REDACTED"
     elif prefix == "tombstone":
         direct = any(not is_null(f.get(k)) for k in ("name", "email", "phone", "email_hash"))
-        state = result if result in ("IDENTIFIABLE", "REDACTED") else ("IDENTIFIABLE" if direct else "REDACTED")
+        if result == "NOT_FOUND" or rows == 0 or http == 404:
+            state = "ABSENT"    # a lookup that finds nothing is not a redacted tombstone
+        else:
+            state = result if result in ("IDENTIFIABLE", "REDACTED") else ("IDENTIFIABLE" if direct else "REDACTED")
     elif prefix == "backup":
         allowed = truthy(f.get("restore_allowed"))
         eligible, blocked = truthy(f.get("eligible")), truthy(f.get("deletion_block"))

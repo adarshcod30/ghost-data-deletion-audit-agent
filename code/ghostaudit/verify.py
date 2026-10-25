@@ -8,7 +8,7 @@ from __future__ import annotations
 import json
 from datetime import datetime
 
-from .planner import OP_STATE, OPERATION_ORDER, PHASE_ORDER
+from .planner import OP_STATE, OPERATION_ORDER, PHASE_ORDER, RULES
 
 STATUSES = ("COMPLETE", "INCOMPLETE", "NOT_APPLICABLE")
 STEP_KEYS = ("step_no", "phase", "system_id", "resource_id", "operation", "state", "evidence_id")
@@ -17,12 +17,25 @@ PHASE_OF = {op: phase for phase, ops in {
     for op in ops}
 
 
+# finding -> (remediations that may follow it, verifications that must close it), read from the planner rules
+FOLLOW_UP: dict[str, tuple[set[str], set[str]]] = {}
+for _finding, _remediation, _verification in RULES.values():
+    if _finding:
+        FOLLOW_UP.setdefault(_finding, (set(), set()))
+        FOLLOW_UP[_finding][0].add(_remediation)
+        FOLLOW_UP[_finding][1].add(_verification)
+
+
 def verify_row(case_id: str, status: str, steps: list[dict], audit_at: datetime,
-               evidence_times: dict[str, datetime], allow_unidentified: bool = False) -> list[str]:
+               evidence_times: dict[str, datetime], allow_unidentified: bool = False,
+               evidence_names: dict[str, set[str]] | None = None,
+               evidence_systems: dict[str, set[str]] | None = None) -> list[str]:
     """Problems with one row (empty list when it is valid).
 
     `evidence_times` maps every citable id (file_id, activity_id, audit_id) to when it was captured
-    or happened; a citation after audit_at is not allowed.
+    or happened; a citation after audit_at is not allowed. When `evidence_names` (file id to the resource ids
+    it names) and `evidence_systems` (file id to the systems it covers) are given, a cited file must also
+    name the resource, or, for an absence check, cover the system.
     """
     problems: list[str] = []
     tag = f"{case_id}"
@@ -35,6 +48,7 @@ def verify_row(case_id: str, status: str, steps: list[dict], audit_at: datetime,
     if not steps and allow_unidentified and status != "COMPLETE":
         problems.append(f"{tag}: an unidentified case must be COMPLETE")
     previous = None
+    seen: set[tuple] = set()
     for index, step in enumerate(steps, start=1):
         where = f"{tag} step {index}"
         if set(step) != set(STEP_KEYS):
@@ -53,6 +67,9 @@ def verify_row(case_id: str, status: str, steps: list[dict], audit_at: datetime,
         if previous is not None and key < previous:
             problems.append(f"{where}: out of order")
         previous = key
+        if key in seen:
+            problems.append(f"{where}: duplicate of an earlier step")
+        seen.add(key)
         evidence = step["evidence_id"]
         must_cite = (status == "COMPLETE") or step["phase"] == "FINDING"
         if status == "INCOMPLETE" and step["phase"] != "FINDING" and evidence != "":
@@ -66,6 +83,22 @@ def verify_row(case_id: str, status: str, steps: list[dict], audit_at: datetime,
                 problems.append(f"{where}: unknown evidence id {evidence}")
             elif evidence_times[evidence] > audit_at:
                 problems.append(f"{where}: evidence {evidence} is dated after audit_at")
+            elif evidence_names is not None and evidence in evidence_names:
+                covers = step["operation"] == "VERIFY_RECORD_ABSENT" and step["system_id"] in (evidence_systems or {}).get(evidence, ())
+                if step["resource_id"] not in evidence_names[evidence] and not covers:
+                    problems.append(f"{where}: evidence {evidence} neither names {step['resource_id']} nor covers {step['system_id']}")
+    if status == "INCOMPLETE":
+        by_resource: dict[str, set[str]] = {}
+        for step in steps:
+            if step.get("operation") in OP_STATE:
+                by_resource.setdefault(step["resource_id"], set()).add(step["operation"])
+        for resource, found in sorted(by_resource.items()):
+            for finding in sorted(found & set(FOLLOW_UP)):
+                remediations, verifications = FOLLOW_UP[finding]
+                if not found & remediations:
+                    problems.append(f"{tag}: {resource} has {finding} but no matching remediation")
+                if not found & verifications:
+                    problems.append(f"{tag}: {resource} has {finding} but no closing verification")
     if status == "INCOMPLETE" and steps and not any(s.get("phase") == "FINDING" for s in steps):
         problems.append(f"{tag}: INCOMPLETE row has no finding")
     return problems

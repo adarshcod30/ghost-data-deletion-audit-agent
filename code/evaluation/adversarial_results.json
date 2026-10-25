@@ -1,0 +1,492 @@
+[
+ {
+  "id": "I1",
+  "area": "Identity",
+  "attack": "Request uses the ORIGINAL email; the live record still carries the original email, the profile now has a new one",
+  "expected": "INCOMPLETE, REPORT_REMAINING_RECORD account_100",
+  "actual": "INCOMPLETE: REPORT_REMAINING_RECORD account_100, DELETE_RECORD account_100, VERIFY_RECORD_ABSENT account_100",
+  "verdict": "blocked",
+  "severity": "",
+  "impact": ""
+ },
+ {
+  "id": "I2",
+  "area": "Identity",
+  "attack": "Near-identical email and identical name: user_2 (alice@examp1e.test) has a live account; user_1 is already gone",
+  "expected": "COMPLETE for user_1 with no step about account_200",
+  "actual": "COMPLETE: VERIFY_RECORD_ABSENT account_201",
+  "verdict": "blocked",
+  "severity": "",
+  "impact": ""
+ },
+ {
+  "id": "I2b",
+  "area": "Identity",
+  "attack": "Request for the look-alike address (user_2) must see only user_2's record",
+  "expected": "INCOMPLETE, account_200 only",
+  "actual": "INCOMPLETE: REPORT_REMAINING_RECORD account_200, DELETE_RECORD account_200, VERIFY_RECORD_ABSENT account_200",
+  "verdict": "blocked",
+  "severity": "",
+  "impact": ""
+ },
+ {
+  "id": "I3",
+  "area": "Identity",
+  "attack": "Old record carries only the HISTORICAL phone number",
+  "expected": "INCOMPLETE, REPORT_REMAINING_RECORD account_100",
+  "actual": "INCOMPLETE: REPORT_REMAINING_RECORD account_100, DELETE_RECORD account_100, VERIFY_RECORD_ABSENT account_100",
+  "verdict": "blocked",
+  "severity": "",
+  "impact": ""
+ },
+ {
+  "id": "I3b",
+  "area": "Identity",
+  "attack": "Analytics record carries only the HISTORICAL email hash",
+  "expected": "INCOMPLETE, REPORT_EXPOSED_PII analytics_100",
+  "actual": "INCOMPLETE: REPORT_EXPOSED_PII analytics_100, ANONYMIZE_RECORD analytics_100, VERIFY_RECORD_ANONYMIZED analytics_100",
+  "verdict": "blocked",
+  "severity": "",
+  "impact": ""
+ },
+ {
+  "id": "I4",
+  "area": "Identity",
+  "attack": "Two cases share a window and a superficial attribute (result, time); two candidate activity rows",
+  "expected": "no link made (ambiguous)",
+  "actual": "links: none",
+  "verdict": "blocked",
+  "severity": "",
+  "impact": ""
+ },
+ {
+  "id": "I5",
+  "area": "Identity",
+  "attack": "Tombstone for user_1 plus a live account for user_2 under a different stable id",
+  "expected": "INCOMPLETE: tombstone_100 exposed, nothing about account_300",
+  "actual": "INCOMPLETE: REPORT_EXPOSED_PII tombstone_100, REDACT_RECORD tombstone_100, VERIFY_RECORD_REDACTED tombstone_100",
+  "verdict": "blocked",
+  "severity": "",
+  "impact": ""
+ },
+ {
+  "id": "E1",
+  "area": "Evidence",
+  "attack": "Manifest lists a misleading file that parses but holds no records",
+  "expected": "run refuses (coverage check) or ignores it without changing the answer",
+  "actual": "run refused: evidence coverage check failed:\nevidence_02: parsed but produced no records",
+  "verdict": "detected",
+  "severity": "",
+  "impact": ""
+ },
+ {
+  "id": "E1b",
+  "area": "Evidence",
+  "attack": "Manifest lists a file that cannot be parsed",
+  "expected": "run refuses; no output is written from a partial index",
+  "actual": "run refused: evidence coverage check failed:\nevidence_02: JSONDecodeError: Expecting value: line 1 column 31 (char 30)",
+  "verdict": "detected",
+  "severity": "",
+  "impact": ""
+ },
+ {
+  "id": "E2",
+  "area": "Evidence",
+  "attack": "OCR email is within edit distance 2 of TWO real, near-identical addresses",
+  "expected": "left unrepaired (ambiguous), so it links to neither person",
+  "actual": "emails after repair: ('alice@exampie.test',)",
+  "verdict": "blocked",
+  "severity": "",
+  "impact": ""
+ },
+ {
+  "id": "E2b",
+  "area": "Evidence",
+  "attack": "OCR email within distance 2 of exactly one real address",
+  "expected": "repaired to that address (uniqueness rule)",
+  "actual": "emails after repair: ('alice@exampie.test', 'alice@example.test')",
+  "verdict": "blocked",
+  "severity": "",
+  "impact": ""
+ },
+ {
+  "id": "E3",
+  "area": "Evidence",
+  "attack": "JSON record is ACTIVE with email and phone present but carries a stray result=NOT_FOUND claim",
+  "expected": "INCOMPLETE (the resource fields show the account exists)",
+  "actual": "INCOMPLETE: REPORT_REMAINING_RECORD account_100, DELETE_RECORD account_100, VERIFY_RECORD_ABSENT account_100",
+  "verdict": "blocked",
+  "severity": "",
+  "impact": ""
+ },
+ {
+  "id": "E3b",
+  "area": "Evidence",
+  "attack": "JSON record with live fields plus a stray rows=0",
+  "expected": "INCOMPLETE",
+  "actual": "INCOMPLETE: REPORT_REMAINING_RECORD account_100, DELETE_RECORD account_100, VERIFY_RECORD_ABSENT account_100",
+  "verdict": "blocked",
+  "severity": "",
+  "impact": ""
+ },
+ {
+  "id": "E4",
+  "area": "Evidence",
+  "attack": "Activity log says the deletion succeeded; a later snapshot still holds the record",
+  "expected": "INCOMPLETE (snapshot beats the claim)",
+  "actual": "INCOMPLETE: REPORT_REMAINING_RECORD account_100, DELETE_RECORD account_100, VERIFY_RECORD_ABSENT account_100",
+  "verdict": "blocked",
+  "severity": "",
+  "impact": ""
+ },
+ {
+  "id": "E5",
+  "area": "Evidence",
+  "attack": "A file captured AFTER audit_at shows the account present again",
+  "expected": "COMPLETE, citing only the earlier file",
+  "actual": "COMPLETE: VERIFY_RECORD_ABSENT account_100",
+  "verdict": "blocked",
+  "severity": "",
+  "impact": ""
+ },
+ {
+  "id": "E5b",
+  "area": "Evidence",
+  "attack": "A file captured AFTER audit_at shows the account deleted",
+  "expected": "INCOMPLETE (later deletion cannot rescue the case)",
+  "actual": "INCOMPLETE: REPORT_REMAINING_RECORD account_100, DELETE_RECORD account_100, VERIFY_RECORD_ABSENT account_100",
+  "verdict": "blocked",
+  "severity": "",
+  "impact": ""
+ },
+ {
+  "id": "E6",
+  "area": "Evidence",
+  "attack": "Stale-looking ABSENT lookup at 10:00 is superseded by a PRESENT lookup at 10:30 (before audit_at)",
+  "expected": "INCOMPLETE",
+  "actual": "INCOMPLETE: REPORT_REMAINING_RECORD account_100, DELETE_RECORD account_100, VERIFY_RECORD_ABSENT account_100",
+  "verdict": "blocked",
+  "severity": "",
+  "impact": ""
+ },
+ {
+  "id": "E6b",
+  "area": "Evidence",
+  "attack": "Two observations at the SAME instant disagree (ABSENT in evidence_01, PRESENT in evidence_02)",
+  "expected": "INCOMPLETE (the unsafe reading wins a tie)",
+  "actual": "INCOMPLETE: REPORT_REMAINING_RECORD account_100, DELETE_RECORD account_100, VERIFY_RECORD_ABSENT account_100",
+  "verdict": "blocked",
+  "severity": "",
+  "impact": ""
+ },
+ {
+  "id": "E6c",
+  "area": "Evidence",
+  "attack": "Same tie, file order reversed (PRESENT in evidence_01, ABSENT in evidence_02)",
+  "expected": "INCOMPLETE (the unsafe reading wins a tie)",
+  "actual": "INCOMPLETE: REPORT_REMAINING_RECORD account_100, DELETE_RECORD account_100, VERIFY_RECORD_ABSENT account_100",
+  "verdict": "blocked",
+  "severity": "",
+  "impact": ""
+ },
+ {
+  "id": "E7",
+  "area": "Evidence",
+  "attack": "A log line links the subject's email to search_100 but its event has no known outcome",
+  "expected": "not COMPLETE: the resource is linked and its state is unknown",
+  "actual": "COMPLETE: no steps | FLAGGED in run output: search_100 left out (linked, but no admissible record states its condition)",
+  "verdict": "detected",
+  "severity": "",
+  "impact": ""
+ },
+ {
+  "id": "E8",
+  "area": "Identity",
+  "attack": "Request email held by no user",
+  "expected": "not COMPLETE",
+  "actual": "INCOMPLETE: no steps | verifier: case_1: INCOMPLETE row has no steps",
+  "verdict": "blocked",
+  "severity": "",
+  "impact": ""
+ },
+ {
+  "id": "E9",
+  "area": "Evidence",
+  "attack": "Subject has no evidence at all (nothing links to them)",
+  "expected": "COMPLETE but flagged as unidentified (documented limit)",
+  "actual": "COMPLETE: no steps",
+  "verdict": "blocked",
+  "severity": "",
+  "impact": ""
+ },
+ {
+  "id": "P1",
+  "area": "Policy",
+  "attack": "Support conversation with shared context and the requester's identifiers still visible",
+  "expected": "INCOMPLETE: REPORT_EXPOSED_PII, REDACT_RECORD (never DELETE_RECORD)",
+  "actual": "INCOMPLETE: REPORT_EXPOSED_PII support_100, REDACT_RECORD support_100, VERIFY_RECORD_REDACTED support_100",
+  "verdict": "blocked",
+  "severity": "",
+  "impact": ""
+ },
+ {
+  "id": "P2",
+  "area": "Policy",
+  "attack": "Standalone customer attachment",
+  "expected": "INCOMPLETE: DELETE_RECORD support_101",
+  "actual": "INCOMPLETE: REPORT_REMAINING_RECORD support_101, DELETE_RECORD support_101, VERIFY_RECORD_ABSENT support_101",
+  "verdict": "blocked",
+  "severity": "",
+  "impact": ""
+ },
+ {
+  "id": "P3",
+  "area": "Policy",
+  "attack": "Analytics record whose stable user_id still points at the subject",
+  "expected": "INCOMPLETE: ANONYMIZE_RECORD analytics_100",
+  "actual": "INCOMPLETE: REPORT_EXPOSED_PII analytics_100, ANONYMIZE_RECORD analytics_100, VERIFY_RECORD_ANONYMIZED analytics_100",
+  "verdict": "blocked",
+  "severity": "",
+  "impact": ""
+ },
+ {
+  "id": "P3b",
+  "area": "Policy",
+  "attack": "Analytics record, identifier fields null but a free-text note holds the email",
+  "expected": "linked and reported (the email is visible)",
+  "actual": "COMPLETE: VERIFY_RECORD_ANONYMIZED analytics_100",
+  "verdict": "exploitable",
+  "severity": "HIGH",
+  "impact": "An identifier hidden in a free-text field escapes the anonymization check."
+ },
+ {
+  "id": "P4",
+  "area": "Policy",
+  "attack": "Security audit record inside its retention period",
+  "expected": "COMPLETE: VERIFY_RECORD_PRESENT only, never DELETE",
+  "actual": "COMPLETE: VERIFY_RECORD_PRESENT audit_record_100",
+  "verdict": "blocked",
+  "severity": "",
+  "impact": ""
+ },
+ {
+  "id": "P4b",
+  "area": "Policy",
+  "attack": "A record that MUST be retained was deleted before audit_at (lookup now returns nothing)",
+  "expected": "not COMPLETE: a required retained record is gone",
+  "actual": "COMPLETE: no steps | FLAGGED in run output: audit_record_100 has no allowed operation",
+  "verdict": "detected",
+  "severity": "",
+  "impact": ""
+ },
+ {
+  "id": "P5",
+  "area": "Policy",
+  "attack": "Active legal hold",
+  "expected": "COMPLETE: VERIFY_RECORD_PRESENT legal_hold_100, no delete",
+  "actual": "COMPLETE: VERIFY_RECORD_PRESENT legal_hold_100",
+  "verdict": "blocked",
+  "severity": "",
+  "impact": ""
+ },
+ {
+  "id": "P6",
+  "area": "Policy",
+  "attack": "Permitted backup that can still be restored",
+  "expected": "INCOMPLETE: REPORT_RESTORE_RISK, BLOCK_RESTORE, VERIFY_RESTORE_BLOCKED, no DELETE",
+  "actual": "INCOMPLETE: REPORT_RESTORE_RISK backup_100, BLOCK_RESTORE backup_100, VERIFY_RESTORE_BLOCKED backup_100",
+  "verdict": "blocked",
+  "severity": "",
+  "impact": ""
+ },
+ {
+  "id": "P6b",
+  "area": "Policy",
+  "attack": "Backup entry for the subject whose restore flag is missing",
+  "expected": "not COMPLETE without a restore verdict",
+  "actual": "COMPLETE: no steps | FLAGGED in run output: backup_100 left out (linked, but no admissible record states its condition)",
+  "verdict": "detected",
+  "severity": "",
+  "impact": ""
+ },
+ {
+  "id": "P7",
+  "area": "Policy",
+  "attack": "Tombstone keeps user_1 but still exposes email and phone",
+  "expected": "INCOMPLETE: REDACT_RECORD tombstone_100 (never DELETE)",
+  "actual": "INCOMPLETE: REPORT_EXPOSED_PII tombstone_100, REDACT_RECORD tombstone_100, VERIFY_RECORD_REDACTED tombstone_100",
+  "verdict": "blocked",
+  "severity": "",
+  "impact": ""
+ },
+ {
+  "id": "P7b",
+  "area": "Policy",
+  "attack": "Compliant tombstone",
+  "expected": "COMPLETE: VERIFY_RECORD_REDACTED tombstone_100",
+  "actual": "COMPLETE: VERIFY_RECORD_REDACTED tombstone_100",
+  "verdict": "blocked",
+  "severity": "",
+  "impact": ""
+ },
+ {
+  "id": "P7c",
+  "area": "Policy",
+  "attack": "The tombstone that must be preserved has itself been deleted",
+  "expected": "not COMPLETE: the stable reference is gone",
+  "actual": "COMPLETE: no steps | FLAGGED in run output: tombstone_100 has no allowed operation",
+  "verdict": "detected",
+  "severity": "",
+  "impact": ""
+ },
+ {
+  "id": "S1",
+  "area": "State flow",
+  "attack": "Account deleted at 10:00, a still-active sync recreates it at 08:00 next day (before audit_at)",
+  "expected": "INCOMPLETE: account_100 reported, data_flow_100 reported",
+  "actual": "INCOMPLETE: REPORT_REMAINING_RECORD account_100, REPORT_ACTIVE_DATA_FLOW data_flow_100, DISABLE_DATA_FLOW data_flow_100, DELETE_RECORD account_100, VERIFY_RECORD_ABSENT account_100, VERIFY_DATA_FLOW_DISABLED data_flow_100",
+  "verdict": "blocked",
+  "severity": "",
+  "impact": ""
+ },
+ {
+  "id": "S2",
+  "area": "State flow",
+  "attack": "Flow is disabled",
+  "expected": "COMPLETE with VERIFY_DATA_FLOW_DISABLED citing the evidence",
+  "actual": "COMPLETE: VERIFY_DATA_FLOW_DISABLED data_flow_100",
+  "verdict": "blocked",
+  "severity": "",
+  "impact": ""
+ },
+ {
+  "id": "S3",
+  "area": "State flow",
+  "attack": "Account present and its recreating flow active",
+  "expected": "DISABLE_DATA_FLOW is planned before DELETE_RECORD",
+  "actual": "INCOMPLETE: REPORT_REMAINING_RECORD account_100, REPORT_ACTIVE_DATA_FLOW data_flow_100, DISABLE_DATA_FLOW data_flow_100, DELETE_RECORD account_100, VERIFY_RECORD_ABSENT account_100, VERIFY_DATA_FLOW_DISABLED data_flow_100",
+  "verdict": "blocked",
+  "severity": "",
+  "impact": ""
+ },
+ {
+  "id": "S4",
+  "area": "State flow",
+  "attack": "Four independent copies in four systems",
+  "expected": "a finding, a remediation and a verification for EACH copy",
+  "actual": "INCOMPLETE: REPORT_REMAINING_RECORD account_100, REPORT_REMAINING_RECORD export_100, REPORT_REMAINING_RECORD search_100, REPORT_EXPOSED_PII analytics_100, DELETE_RECORD account_100, DELETE_RECORD export_100, DELETE_RECORD search_100, ANONYMIZE_RECORD analytics_100, VERIFY_RECORD_ABSENT account_100, VERIFY_RECORD_ABSENT export_100, VERIFY_RECORD_ABSENT search_100, VERIFY_RECORD_ANONYMIZED analytics_100",
+  "verdict": "blocked",
+  "severity": "",
+  "impact": ""
+ },
+ {
+  "id": "O1",
+  "area": "Output",
+  "attack": "Wrong evidence id: a real, in-time file that never mentions the resource",
+  "expected": "row rejected",
+  "actual": "verifier: case_1 step 1: evidence evidence_02 neither names account_100 nor covers account_service",
+  "verdict": "detected",
+  "severity": "",
+  "impact": ""
+ },
+ {
+  "id": "O2",
+  "area": "Output",
+  "attack": "Incompatible state for an operation",
+  "expected": "row rejected",
+  "actual": "verifier: case_1 step 1: state PRESENT does not fit VERIFY_RECORD_ABSENT",
+  "verdict": "detected",
+  "severity": "",
+  "impact": ""
+ },
+ {
+  "id": "O2b",
+  "area": "Output",
+  "attack": "Unsupported operation",
+  "expected": "row rejected",
+  "actual": "verifier: case_1 step 1: unknown operation ERASE_EVERYTHING",
+  "verdict": "detected",
+  "severity": "",
+  "impact": ""
+ },
+ {
+  "id": "O3",
+  "area": "Output",
+  "attack": "INCOMPLETE row with a finding but no remediation and no verification",
+  "expected": "row rejected",
+  "actual": "verifier: case_1: account_100 has REPORT_REMAINING_RECORD but no matching remediation",
+  "verdict": "detected",
+  "severity": "",
+  "impact": ""
+ },
+ {
+  "id": "O3b",
+  "area": "Output",
+  "attack": "Finding and remediation present, final verification missing",
+  "expected": "row rejected",
+  "actual": "verifier: case_1: account_100 has REPORT_REMAINING_RECORD but no closing verification",
+  "verdict": "detected",
+  "severity": "",
+  "impact": ""
+ },
+ {
+  "id": "O4",
+  "area": "Output",
+  "attack": "Duplicate step",
+  "expected": "row rejected",
+  "actual": "verifier: case_1 step 2: duplicate of an earlier step",
+  "verdict": "detected",
+  "severity": "",
+  "impact": ""
+ },
+ {
+  "id": "O5",
+  "area": "Output",
+  "attack": "Verification before finding",
+  "expected": "row rejected",
+  "actual": "verifier: case_1 step 1: VERIFICATION step in an INCOMPLETE row must have an empty evidence_id",
+  "verdict": "detected",
+  "severity": "",
+  "impact": ""
+ },
+ {
+  "id": "O5b",
+  "area": "Output",
+  "attack": "Numbering gap",
+  "expected": "row rejected",
+  "actual": "verifier: case_1 step 2: step_no is 3",
+  "verdict": "detected",
+  "severity": "",
+  "impact": ""
+ },
+ {
+  "id": "O6",
+  "area": "Output",
+  "attack": "COMPLETE citing evidence captured after audit_at",
+  "expected": "row rejected",
+  "actual": "verifier: case_1 step 1: evidence evidence_99 is dated after audit_at",
+  "verdict": "detected",
+  "severity": "",
+  "impact": ""
+ },
+ {
+  "id": "O7",
+  "area": "Output",
+  "attack": "COMPLETE row verifies the primary record only; a secondary copy exists elsewhere in the ledger",
+  "expected": "cannot be rejected by structure alone: the planner is the control (see S4)",
+  "actual": "verifier: accepted the row",
+  "verdict": "detected",
+  "severity": "",
+  "impact": ""
+ },
+ {
+  "id": "O8",
+  "area": "State flow",
+  "attack": "Remediation deletes the record but never disables the active flow that was reported",
+  "expected": "row rejected",
+  "actual": "verifier: case_1 step 2: out of order",
+  "verdict": "detected",
+  "severity": "",
+  "impact": ""
+ }
+]

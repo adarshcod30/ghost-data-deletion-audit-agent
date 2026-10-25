@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import csv
 import json
+import os
 from pathlib import Path
 from typing import Callable, Iterable, TypeVar
 
@@ -184,6 +185,9 @@ def load_dataset(dataset_dir: Path | None = None) -> Dataset:
         if event.user_id not in user_ids:
             problems.append(f"user_audit_log.csv: {event.audit_id}: unknown user {event.user_id}")
     for item in evidence:
+        if not Path(os.path.normpath(item.abs_path)).is_relative_to(root):   # lexical: blocks ../, allows a symlinked evidence folder
+            problems.append(f"evidence_files.csv: {item.file_id}: path leaves the dataset folder")
+            continue
         if not item.abs_path.is_file():
             problems.append(f"evidence_files.csv: {item.file_id}: missing file {item.file_path}")
     overlap = {r.case_id for r in requests} & {r.case_id for r in samples}
