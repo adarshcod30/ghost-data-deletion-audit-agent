@@ -124,8 +124,9 @@ class BedrockClient:
         if path is not None and path.is_file():
             data = json.loads(path.read_text(encoding="utf-8"))
             blocks = tuple(data.get("blocks", ()))
-            result = LLMResult(data["text"], data["input_tokens"], data["output_tokens"], 0.0, True,
-                               model_id, data.get("stop_reason", ""),
+            # latency_s is the original live latency, kept so reports do not depend on cache state.
+            result = LLMResult(data["text"], data["input_tokens"], data["output_tokens"],
+                               data.get("latency_s", 0.0), True, model_id, data.get("stop_reason", ""),
                                tuple(b["toolUse"] for b in blocks if "toolUse" in b), blocks)
             self.ledger.record(model_id, purpose, result)
             return result
@@ -164,7 +165,7 @@ class BedrockClient:
             path.write_text(json.dumps({"text": result.text, "input_tokens": result.input_tokens,
                                         "output_tokens": result.output_tokens,
                                         "stop_reason": result.stop_reason, "model_id": model_id,
-                                        "blocks": list(blocks)}, ensure_ascii=False), encoding="utf-8")
+                                        "latency_s": result.latency_s, "blocks": list(blocks)}, ensure_ascii=False), encoding="utf-8")
         self.ledger.record(model_id, purpose, result)
         return result
 

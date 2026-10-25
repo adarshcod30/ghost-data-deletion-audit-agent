@@ -182,7 +182,12 @@ def write_markdown(probe: list[dict], access: dict, rows: list[dict]) -> None:
              f"{sum(not p['label'] for p in probe)} not deletion). Sources: "
              f"{sum(p['source'] == 'dataset' for p in probe)} from the request file labelled by hand, "
              f"{sum(p['source'] == 'sample' for p in probe)} sample requests (all deletion in "
-             f"`sample_output.csv`), {sum(p['source'] == 'synthetic' for p in probe)} synthetic.", "",
+             f"`sample_output.csv`), {sum(p['source'] == 'synthetic' for p in probe)} synthetic and "
+             f"{sum(p['source'] == 'heldout' for p in probe)} held-out (written after the last prompt "
+             "change and never used to tune it). Two sample requests exposed a gap in the first version "
+             "of the prompt (asking to verify or finish a deletion that already happened counts as a "
+             "deletion request), so the sample items are not a blind test and the held-out column is "
+             "the fair out-of-sample number.", "",
              "## Access (a real call per model)", "",
              "| Model | Usable |", "|---|---|"]
     for model, (ok, why) in access.items():

@@ -29,6 +29,7 @@ def test_second_call_is_served_from_cache_with_original_tokens(tmp_path):
     assert (first.cached, second.cached) == (False, True)
     assert client._client.calls == 1
     assert second.text == "hello" and second.input_tokens == 100 and second.output_tokens == 20
+    assert second.latency_s == first.latency_s  # original latency survives the cache
     summary = client.ledger.summary()["m"]
     assert summary["calls"] == 2 and summary["live_calls"] == 1 and summary["cached_calls"] == 1
     assert summary["input_tokens"] == 200 and summary["output_tokens"] == 40
