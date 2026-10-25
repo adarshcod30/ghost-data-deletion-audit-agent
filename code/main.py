@@ -90,7 +90,7 @@ def cmd_index(_: argparse.Namespace) -> int:
     return 1 if index.prefix_conflicts else 0
 
 
-def cmd_run(_: argparse.Namespace) -> int:
+def cmd_run(args: argparse.Namespace) -> int:
     """Answer every request, verify every row against the contract, then write output.csv."""
     try:
         dataset = load_dataset()
@@ -124,13 +124,14 @@ def cmd_run(_: argparse.Namespace) -> int:
         for line in problems[:20]:
             print("  " + line, file=sys.stderr)
         return 1
-    with (REPO_ROOT / "output.csv").open("w", newline="", encoding="utf-8") as handle:
+    destination = Path(args.output) if getattr(args, "output", None) else REPO_ROOT / "output.csv"
+    with destination.open("w", newline="", encoding="utf-8") as handle:
         writer = csv.writer(handle, lineterminator="\n")
         writer.writerow(["case_id", "deletion_status", "steps_json"])
         writer.writerows(rows)
     counts = Counter(status for _, status, _ in rows)
     steps = sum(len(json.loads(blob)) for _, _, blob in rows)
-    print(f"wrote {len(rows)} rows to output.csv: {dict(sorted(counts.items()))}, {steps} steps, 0 contract problems")
+    print(f"wrote {len(rows)} rows to {destination.name}: {dict(sorted(counts.items()))}, {steps} steps, 0 contract problems")
     print(f"workflow account links: {pipeline.workflow.stats}")
     print(f"unidentified cases (COMPLETE, no steps): {len(unidentified_cases)} {unidentified_cases}")
     return 0
@@ -141,7 +142,8 @@ def main(argv: list[str] | None = None) -> int:
     sub = parser.add_subparsers(dest="command", required=True)
     sub.add_parser("identities", help="resolve every request email to a user (Phase 1 gate)")
     sub.add_parser("index", help="index every evidence file (Phase 2)")
-    sub.add_parser("run", help="answer every request and write output.csv (verified)")
+    run = sub.add_parser("run", help="answer every request and write output.csv (verified)")
+    run.add_argument("--output", help="write here instead of ./output.csv")
     args = parser.parse_args(argv)
     return {"identities": cmd_identities, "index": cmd_index, "run": cmd_run}[args.command](args)
 

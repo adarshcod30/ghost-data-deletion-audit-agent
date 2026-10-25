@@ -65,3 +65,21 @@ def test_support_contacts_and_attachments_are_deleted_while_messages_are_redacte
 def test_helpers():
     assert is_null("null") and is_null(None) and not is_null("x")
     assert truthy("True") is True and truthy("0") is False and truthy("maybe") is None
+
+
+@pytest.mark.parametrize("fields", [
+    {"collection_name": "ticket_attachments", "ticket_id": "CS-1", "file_name": "delivery_confirmation_7.pdf",
+     "uploaded_by": "a@b.c", "storage_class": "ticket_attachment"},
+    {"ticket_id": "CS-1", "file_name": "x.pdf", "uploaded_by": "a@b.c", "storage_class": "ticket_attachment"},
+])
+def test_ticket_attachment_rows_are_present_attachments(fields):
+    """Found by the hand audit: attachment rows have no message fields and were silently dropped."""
+    got = interpret(rec("support_1", fields, kind="sql_row"), "support_1")
+    assert (got.state, got.subtype) == ("PRESENT", "attachment")
+
+
+@pytest.mark.parametrize("decision,state", [("deny", "BLOCKED"), ("denied", "BLOCKED"), ("allow", "ACTIVE")])
+def test_restore_authorization_decision(decision, state):
+    got = interpret(rec("backup_1", {"event": "restore_authorization_completed", "decision": decision,
+                                     "policy": "privacy_deletion"}), "backup_1")
+    assert got.state == state

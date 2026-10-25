@@ -117,7 +117,9 @@ def interpret(rec: EvidenceRecord, resource_id: str) -> Observation | None:
             direct = any(not is_null(f.get(k)) for k in ("email", "phone", "email_hash", "customer_reference", "user_id"))
             state = "IDENTIFIABLE" if direct else "ANONYMIZED"
     elif prefix == "support":
-        if "attachment" in event or str(f.get("record_type", "")).upper() == "SUPPORT_ATTACHMENT" or rec.kind in ("document", "document_line"):
+        is_attachment_row = (not is_null(f.get("file_name")) or str(f.get("storage_class", "")).casefold() == "ticket_attachment"
+                             or str(f.get("collection_name", "")).casefold() == "ticket_attachments")
+        if is_attachment_row or "attachment" in event or str(f.get("record_type", "")).upper() == "SUPPORT_ATTACHMENT" or rec.kind in ("document", "document_line"):
             subtype = "attachment"
             state = "PRESENT"
         elif event in ("contact_query_completed", "deletion_marker_check"):
@@ -138,8 +140,13 @@ def interpret(rec: EvidenceRecord, resource_id: str) -> Observation | None:
     elif prefix == "backup":
         allowed = truthy(f.get("restore_allowed"))
         eligible, blocked = truthy(f.get("eligible")), truthy(f.get("deletion_block"))
+        decision = str(f.get("decision", "")).casefold()
         if result in ("ACTIVE", "BLOCKED"):
             state = result
+        elif decision in ("deny", "denied", "blocked", "block"):
+            state = "BLOCKED"   # the restore was refused by the deletion policy
+        elif decision in ("allow", "allowed", "approve", "approved", "grant", "granted"):
+            state = "ACTIVE"
         elif allowed is not None:
             state = "ACTIVE" if allowed else "BLOCKED"
         elif eligible is not None:

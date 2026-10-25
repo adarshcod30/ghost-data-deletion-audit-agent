@@ -106,3 +106,38 @@ def test_workflow_matches_in_the_samples_are_all_correct(dataset, pipeline):
             checked += 1
             assert rid in {s["resource_id"] for s in dataset.sample_output[request.case_id][1]}
     assert checked >= 10
+
+
+# ---------------------------------------------------------------------- determinism and exact matching
+def test_output_is_identical_across_python_hash_seeds(tmp_path):
+    """Set and dict iteration order depends on PYTHONHASHSEED. Found by the audit: an unsound matching rule
+    made one row change with the seed, which no in-process test can see. Run the real command under
+    different seeds and compare the bytes."""
+    import hashlib
+    import os
+    import subprocess
+    import sys
+    main = Path(__file__).resolve().parents[1] / "main.py"
+    digests = set()
+    for seed in ("1", "3", "7"):
+        out = tmp_path / f"out_{seed}.csv"
+        env = {**os.environ, "PYTHONHASHSEED": seed}
+        done = subprocess.run([sys.executable, str(main), "run", "--output", str(out)], env=env,
+                              capture_output=True, text=True, timeout=600)
+        assert done.returncode == 0, done.stderr[-400:]
+        digests.add(hashlib.sha256(out.read_bytes()).hexdigest())
+    assert len(digests) == 1
+
+
+def test_exact_matching_forces_only_what_every_consistent_assignment_agrees_on():
+    from ghostaudit.workflow import _forced_assignments
+    # a case with one candidate is forced, and that removes it from the other case's options
+    assert _forced_assignments({"A": {"r1"}, "B": {"r1", "r2"}}) == {"A": "r1", "B": "r2"}
+    # a symmetric pair is never guessed
+    assert _forced_assignments({"A": {"r1", "r2"}, "B": {"r1", "r2"}}) == {}
+    # two rows that only A can take: A can own just one, so neither is forced (the unsound rule forced one,
+    # chosen by iteration order)
+    assert _forced_assignments({"A": {"r1", "r2"}}) == {}
+    # a case with no candidates is ignored; an impossible group yields nothing
+    assert _forced_assignments({"A": set(), "B": {"r1"}}) == {"B": "r1"}
+    assert _forced_assignments({"A": {"r1"}, "B": {"r1"}}) == {}

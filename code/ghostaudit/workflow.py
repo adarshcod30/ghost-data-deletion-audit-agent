@@ -13,10 +13,11 @@ Two facts make this usable, both measured from the cases whose accounts ARE iden
     FAILED, PARTIALLY_COMPLETE -> PARTIAL).
 
 The mapping and the window are learned from those identified cases, not typed in. Rows are then
-matched to cases by elimination, and a link is made only when it is forced: a row that fits one
-case, or a case that fits one row, after already-assigned rows are removed. Ties are left
-unassigned rather than guessed. This is a statistical inference from timing, not a proof, and
-the README says so.
+matched to cases, and a link is made only when it is forced: the same row in every consistent
+assignment. Ties are left
+unassigned rather than guessed. The matching is solved exactly (see _forced_assignments), so the result
+does not depend on iteration order. This is a statistical inference from timing, not a proof, and the
+README says so.
 
 Anonymized analytics profiles were tried the same way and rejected: their activity rows sit at one
 identical offset before `reported_at`, so cases that share a `reported_at` cannot be told apart. On
@@ -64,6 +65,57 @@ def _learn_account_rules(requests, relevant, rows_by_resource) -> tuple[dict[str
     return expected, window
 
 
+def _forced_assignments(candidates: dict[str, set[str]], max_component: int = 14) -> dict[str, str]:
+    """Cases whose row is the same in EVERY consistent assignment.
+
+    Every case that has any candidate must get a distinct row; rows may stay unused (a few rows belong
+    to cases the model has no candidates for). All such assignments are enumerated per connected group
+    of cases and rows, in sorted order, and a link is made only if it holds in all of them. This is
+    exact and independent of iteration order. The simpler rule "a row only one case can take belongs to
+    that case" is not sound when rows can be unowned, and made the output depend on the hash seed.
+    """
+    parent: dict[tuple[str, str], tuple[str, str]] = {}
+
+    def find(x):
+        parent.setdefault(x, x)
+        while parent[x] != x:
+            parent[x] = parent[parent[x]]
+            x = parent[x]
+        return x
+
+    for case_id, rows in candidates.items():
+        for row in rows:
+            parent[find(("c", case_id))] = find(("r", row))
+    groups: dict[tuple[str, str], list[str]] = defaultdict(list)
+    for case_id in sorted(candidates):
+        if candidates[case_id]:
+            groups[find(("c", case_id))].append(case_id)
+    forced: dict[str, str] = {}
+    for cases in groups.values():
+        if len(cases) > max_component:
+            continue
+        order = sorted(cases, key=lambda c: (len(candidates[c]), c))
+        tally: dict[str, Counter] = {c: Counter() for c in order}
+        total = 0
+        stack: list[tuple[int, dict[str, str], set[str]]] = [(0, {}, set())]
+        while stack:
+            i, chosen, used = stack.pop()
+            if i == len(order):
+                total += 1
+                for c, r in chosen.items():
+                    tally[c][r] += 1
+                continue
+            for row in sorted(candidates[order[i]], reverse=True):
+                if row not in used:
+                    stack.append((i + 1, {**chosen, order[i]: row}, used | {row}))
+        if total:
+            for case_id in order:
+                row, n = sorted(tally[case_id].items(), key=lambda kv: (-kv[1], kv[0]))[0]
+                if n == total:
+                    forced[case_id] = row
+    return forced
+
+
 def link_through_workflow(requests: list[DeletionRequest], activity: tuple[Activity, ...], index: EvidenceIndex,
                           relevant: dict[str, list[str]]) -> WorkflowLinks:
     """`relevant` maps every case to the resources already identified for it."""
@@ -86,30 +138,7 @@ def link_through_workflow(requests: list[DeletionRequest], activity: tuple[Activ
                     and a.reported_result == expected.get(r.reported_status)}
         for r in needing
     }
-    assigned: dict[str, str] = {}
-    changed = True
-    while changed:
-        changed = False
-        taken = set(assigned.values())
-        for case_id, options in candidates.items():
-            if case_id in assigned:
-                continue
-            left = options - taken
-            if len(left) == 1:
-                assigned[case_id] = next(iter(left))
-                taken.add(assigned[case_id])
-                changed = True
-        wanted: dict[str, set[str]] = defaultdict(set)
-        for case_id, options in candidates.items():
-            if case_id not in assigned:
-                for row in options - taken:
-                    wanted[row].add(case_id)
-        for row, cases in wanted.items():
-            if len(cases) == 1 and row not in set(assigned.values()):
-                case_id = next(iter(cases))
-                if case_id not in assigned:
-                    assigned[case_id] = row
-                    changed = True
+    assigned = _forced_assignments(candidates)
     links.account = {case: by_id[row].resource_id for case, row in assigned.items()}
 
     links.stats = {
