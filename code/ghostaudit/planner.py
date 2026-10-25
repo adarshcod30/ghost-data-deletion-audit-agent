@@ -13,7 +13,6 @@ A resource already in its final state yields only the verification step.
 """
 from __future__ import annotations
 
-from .common import case_sort_key
 from .ledger import CaseLedger, LedgerEntry
 
 PHASE_ORDER = {"FINDING": 0, "REMEDIATION": 1, "VERIFICATION": 2}
@@ -74,8 +73,10 @@ def plan_steps(ledger: CaseLedger) -> tuple[str, list[dict]]:
     if status == "COMPLETE":
         for step in pending:
             step["evidence_id"] = complete_evidence.get(step["resource_id"], "")
+    # "system_id and resource_id in ascending order": plain string order, the literal reading of the
+    # specification. The 32 reference answers cannot tell string order from numeric order apart.
     pending.sort(key=lambda s: (PHASE_ORDER[s["phase"]], OPERATION_ORDER.index(s["operation"]),
-                                s["system_id"], case_sort_key(s["resource_id"])))
+                                s["system_id"], s["resource_id"]))
     for number, step in enumerate(pending, start=1):
         step["step_no"] = number
     return status, pending

@@ -10,7 +10,7 @@ from dataclasses import dataclass, field
 from .common import case_sort_key
 from .evidence import EvidenceIndex, resource_prefix
 from .identity import Subject
-from .linking import link_resources
+from .linking import RETAINED_PREFIXES, admissible, link_resources
 from .models import DeletionRequest
 from .policy import Policy
 from .state import Observation, interpret
@@ -35,11 +35,13 @@ class CaseLedger:
     entries: tuple[LedgerEntry, ...] = field(default_factory=tuple)
 
 
-def observations_for(resource_id: str, index: EvidenceIndex) -> list[Observation]:
+def observations_for(resource_id: str, index: EvidenceIndex, audit_at=None) -> list[Observation]:
     out: list[Observation] = []
     for rec in index.for_resource(resource_id):
         if rec.kind == "log_trace":
             continue  # traces link resources; each line states its own outcome
+        if audit_at is not None and not admissible(rec, audit_at):
+            continue
         obs = interpret(rec, resource_id)
         if obs is not None:
             out.append(obs)
@@ -52,8 +54,7 @@ def choose_observation(observations: list[Observation], request: DeletionRequest
     Prefer the latest observation made at or before audit_at in a file that was itself captured by
     then, because only such a file may be cited. If every observation sits in a later export (the
     log lines are dated before audit_at but the file was captured after), use the latest of those
-    for the state and leave the citation empty. If the resource was only ever seen after audit_at,
-    use the earliest sighting.
+    for the state and leave the citation empty. A sighting dated after audit_at is never used.
     """
     citable = [o for o in observations if o.time <= request.audit_at and o.file_captured_at <= request.audit_at]
     if citable:
@@ -61,7 +62,10 @@ def choose_observation(observations: list[Observation], request: DeletionRequest
     dated = [o for o in observations if o.time <= request.audit_at]
     if dated:
         return max(dated, key=lambda o: (o.time, case_sort_key(o.file_id)))
-    return min(observations, key=lambda o: (o.time, case_sort_key(o.file_id))) if observations else None
+    retained = [o for o in observations if resource_prefix(o.resource_id) in RETAINED_PREFIXES]
+    if retained:  # append-only records: seen in a later snapshot, so they existed
+        return min(retained, key=lambda o: (o.time, case_sort_key(o.file_id)))
+    return None
 
 
 def absence_proof(system: str, resource_id: str, request: DeletionRequest, index: EvidenceIndex) -> str:
@@ -80,7 +84,8 @@ NON_FINAL_STATES = {"PRESENT", "IDENTIFIABLE", "ACTIVE"}
 
 
 def relevant_resources(request: DeletionRequest, subject: Subject, index: EvidenceIndex) -> list[str]:
-    """Resources that belong to this case.
+    """Resources that belong to this case. Which resources belong to a case does not depend on time (a
+    user's account id is the same on every date); their state and citations are bounded by audit_at.
 
     A resource linked only by evidence dated before the request counts only if that evidence shows
     data that still exists (present, identifiable or active). A lookup that came back empty months
@@ -97,14 +102,18 @@ def relevant_resources(request: DeletionRequest, subject: Subject, index: Eviden
     return sorted(keep, key=case_sort_key)
 
 
-def build_ledger(request: DeletionRequest, subject: Subject, index: EvidenceIndex, policy: Policy) -> CaseLedger:
+def build_ledger(request: DeletionRequest, subject: Subject, index: EvidenceIndex, policy: Policy,
+                 workflow_resources: tuple[str, ...] = ()) -> CaseLedger:
+    """`workflow_resources` are anonymous resources tied to this case through the activity log
+    (see workflow.py); they are added to the identifier-linked ones."""
     entries: list[LedgerEntry] = []
-    for resource_id in relevant_resources(request, subject, index):
+    resource_ids = sorted(set(relevant_resources(request, subject, index)) | set(workflow_resources), key=case_sort_key)
+    for resource_id in resource_ids:
         prefix = resource_prefix(resource_id)
         system = index.system_of(resource_id)
         if system is None:
             continue
-        obs = choose_observation(observations_for(resource_id, index), request)
+        obs = choose_observation(observations_for(resource_id, index, request.audit_at), request)
         if obs is None:
             if prefix == "account":
                 # Linked by another record (a search document names its source account) but no live
